@@ -6,7 +6,7 @@ Does what it says on the tin.
 
 ## How it works
 
-Takes the output of CodeMirror, turns it into a Blob, generates a URL for the Blob, loads it as an a module.
+Takes the output of CodeMirror, turns it into a Blob, generates a URL for the Blob, loads it as a module.
 
 Each time the script is loaded a new id is generated for the processor, and this is passed to the `CustomAudioNode` constructor. Hence not being able to change the name of `CustomAudioNode`.
 
