@@ -1,0 +1,12 @@
+body {
+  font-family: sans-serif;
+}
+
+.CodeMirror {
+  border: 1px black solid;
+  height: 500px;
+}
+
+.code {
+  font-family: Courier;
+}
