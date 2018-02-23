@@ -74,12 +74,15 @@ function runAudioWorklet(workletUrl, processorName) {
 function createEditor() {
   const isMac = CodeMirror.keyMap.default === CodeMirror.keyMap.macDefault;
   const runKeys = isMac ? "Cmd-Enter" : "Ctrl-Enter";
+  const container = document.getElementById("container");
 
   const runButton = document.createElement("button");
   runButton.textContent = `Run: ${runKeys.replace("-", " ")}`;
-  const container = document.getElementById("container");
 
-  let running = false;
+  const stopKeys = isMac ? "Cmd-." : "Ctrl-.";
+  const stopButton = document.createElement("button");
+  stopButton.textContent = `Stop: ${stopKeys.replace("-", " ")}`;
+
   let processorCount = 0;
 
   function runEditorCode(editor) {
@@ -92,13 +95,9 @@ function createEditor() {
     runAudioWorklet(url, processorName);
   }
 
-  function toggleAudio(editor) {
+  function playAudio(editor) {
     stopAudio();
-    running = !running;
-    if (running) { runEditorCode(editor); }
-
-    const msg = running ? "Stop" : "Run";
-    runButton.textContent = `${msg}: ${runKeys.replace("-", " ")}`;
+    runEditorCode(editor);
   }
 
   // code mirror
@@ -108,14 +107,16 @@ function createEditor() {
     lineNumbers: true,
     lint: { esversion: 6 },
     extraKeys: {
-      [runKeys]: () => toggleAudio(editor),
+      [runKeys]: () => playAudio(editor),
+      [stopKeys]: () => stopAudio(),
     }
   });
 
   container.appendChild(runButton);
-  runButton.addEventListener("click", () => {
-    toggleAudio(editor);
-  });
+  runButton.addEventListener("click", () => playAudio(editor));
+
+  container.appendChild(stopButton);
+  stopButton.addEventListener("click", () => stopAudio());
 }
 
 document.addEventListener("DOMContentLoaded", () => {
