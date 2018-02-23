@@ -12,6 +12,7 @@ function stopAudio() {
 
 try {
   // have to use class Expression if inside a try
+  // doing this to catch unsupported browsers
   window.CustomAudioNode = class CustomAudioNode extends AudioWorkletNode {
     constructor(audioContext, processorName) {
       super(audioContext, processorName, {
