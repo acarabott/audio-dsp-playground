@@ -1,7 +1,44 @@
-/* global CodeMirror, AudioWorkletNode, CustomAudioNode */
+/* global CodeMirror, AudioWorkletNode */
 
 let audio;
 let customNode;
+let CustomAudioNode;
+
+const presets = [
+  {
+    name: "Sine Wave",
+    code: `function setup() {
+  this.time = 0;
+}
+
+function loop() {
+  const freq = 666;
+  const amp = 0.1;
+
+  for (let i = 0; i < numFrames; i++) {
+    const sine = Math.sin(2 * Math.PI * freq * this.time);
+    outL[i] = sine * amp;
+    outR[i] = sine * amp;
+
+    this.time += 1 / sampleRate;
+  }
+}
+  `
+  },
+
+  {
+    name: "White Noise",
+    code: `function loop() {
+  const amp = 0.1;
+  for (let i = 0; i < numFrames; i++) {
+    const noise = Math.random() * 2 - 1;
+    outL[i] = noise * amp;
+    outR[i] = noise * amp;
+  }
+}
+  `
+  }
+];
 
 function resumeContextOnInteraction(audioContext) {
   // from https://github.com/captbaritone/winamp2-js/blob/a5a76f554c369637431fe809d16f3f7e06a21969/js/media/index.js#L8-L27
@@ -27,22 +64,6 @@ function stopAudio() {
     customNode.disconnect(audio.desination);
     customNode = undefined;
   }
-}
-
-try {
-  // have to use class Expression if inside a try
-  // doing this to catch unsupported browsers
-  window.CustomAudioNode = class CustomAudioNode extends AudioWorkletNode {
-    constructor(audioContext, processorName) {
-      super(audioContext, processorName, {
-        numberOfInputs: 0,
-        numberOfOutputs: 1,
-        outputChannelCount: [2]
-      });
-    }
-  };
-} catch (e) {
-  // unsupported
 }
 
 function getCode(setupCode, loopCode, sampleRate, processorName) {
@@ -76,40 +97,44 @@ function runAudioWorklet(workletUrl, processorName) {
   });
 }
 
+function createButton(text) {
+  const button = document.createElement("button");
+  button.textContent = text;
+
+  const onMouseUp = () => {
+    button.classList.remove("down");
+    document.removeEventListener("mouseup", onMouseUp, false);
+  };
+
+  const onMouseDown = () => {
+    button.classList.add("down");
+    document.addEventListener("mouseup", onMouseUp, false);
+  };
+
+  button.addEventListener("mousedown", onMouseDown);
+
+  return button;
+}
+
+function addKeyCommandToButton(button, keyCommand) {
+  keyCommand.split("-").forEach(key => {
+    const el = document.createElement("kbd");
+    el.classList.add("key");
+    el.textContent = key.toLowerCase();
+    button.appendChild(el);
+  });
+}
+
 function createEditor(sampleRate) {
   const isMac = CodeMirror.keyMap.default === CodeMirror.keyMap.macDefault;
 
-  function createButton(text, keyCommand) {
-    const button = document.createElement("button");
-    button.textContent = text;
-    keyCommand.split("-").forEach(key => {
-      const el = document.createElement("kbd");
-      el.classList.add("key");
-      el.textContent = key.toLowerCase();
-      button.appendChild(el);
-    });
-
-
-    const onMouseUp = () => {
-      button.classList.remove("down");
-      document.removeEventListener("mouseup", onMouseUp, false);
-    };
-
-    const onMouseDown = () => {
-      button.classList.add("down");
-      document.addEventListener("mouseup", onMouseUp, false);
-    };
-
-    button.addEventListener("mousedown", onMouseDown);
-
-    return button;
-  }
-
   const runKeys = isMac ? "Cmd-Enter" : "Ctrl-Enter";
-  const runButton = createButton("Run: ", runKeys);
+  const runButton = createButton("Run: ");
+  addKeyCommandToButton(runButton, runKeys);
 
   const stopKeys = isMac ? "Cmd-." : "Ctrl-.";
-  const stopButton = createButton("Stop: ", stopKeys);
+  const stopButton = createButton("Stop: ");
+  addKeyCommandToButton(stopButton, stopKeys);
 
   let processorCount = 0;
 
@@ -148,42 +173,31 @@ function createEditor(sampleRate) {
     runEditorCode(editor);
   }
 
-  const defaultUserCode = `function setup() {
-  this.time = 0;
-}
-
-function loop() {
-  const freq = 666;
-  const amp = 0.1;
-
-  for (let i = 0; i < numFrames; i++) {
-    const sine = Math.sin(2 * Math.PI * freq * this.time);
-    outL[i] = sine * amp;
-    outR[i] = sine * amp;
-
-    this.time += 1 / sampleRate;
-  }
-}
-  `;
-
   // code mirror
   const editorWrap = document.getElementById("editor");
-  const loopEditor = CodeMirror(editorWrap, {
+  const editor = CodeMirror(editorWrap, {
     mode: "javascript",
-    value: defaultUserCode,
+    value: presets[0].code,
     lineNumbers: true,
     lint: { esversion: 6 },
     extraKeys: {
-      [runKeys]: () => playAudio(loopEditor),
+      [runKeys]: () => playAudio(editor),
       [stopKeys]: () => stopAudio(),
     }
   });
 
-  editorWrap.appendChild(runButton);
-  runButton.addEventListener("click", () => playAudio(loopEditor));
+  const controlsEl = document.getElementById("controls");
+  controlsEl.appendChild(runButton);
+  runButton.addEventListener("click", () => playAudio(editor));
 
-  editorWrap.appendChild(stopButton);
+  controlsEl.appendChild(stopButton);
   stopButton.addEventListener("click", () => stopAudio());
+
+  presets.forEach(preset => {
+    const button = createButton(preset.name);
+    button.addEventListener("click", () => editor.getDoc().setValue(preset.code));
+    document.getElementById("presets").appendChild(button);
+  });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -193,8 +207,20 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   else {
     document.getElementById("unsupported").remove();
+
+    CustomAudioNode = class CustomAudioNode extends AudioWorkletNode {
+      constructor(audioContext, processorName) {
+        super(audioContext, processorName, {
+          numberOfInputs: 0,
+          numberOfOutputs: 1,
+          outputChannelCount: [2]
+        });
+      }
+    };
+
     audio = new AudioContext();
     resumeContextOnInteraction(audio);
+
     createEditor(audio.sampleRate);
   }
 });

@@ -40,7 +40,7 @@ button.down {
   box-shadow: 2px 2px rgb(43, 156, 212);
 }
 
-button.preset {
+#presets button {
   height: 30px;
 }
 
