@@ -3,6 +3,7 @@
 let audio;
 let customNode;
 let CustomAudioNode;
+let audioDestination;
 
 const presets = [
   {
@@ -61,7 +62,7 @@ function resumeContextOnInteraction(audioContext) {
 
 function stopAudio() {
   if (customNode !== undefined) {
-    customNode.disconnect(audio.desination);
+    customNode.disconnect(audioDestination);
     customNode = undefined;
   }
 }
@@ -93,7 +94,7 @@ function runAudioWorklet(workletUrl, processorName) {
   audio.audioWorklet.addModule(workletUrl).then(() => {
     stopAudio();
     customNode = new CustomAudioNode(audio, processorName);
-    customNode.connect(audio.destination);
+    customNode.connect(audioDestination);
   });
 }
 
@@ -209,6 +210,48 @@ function createEditor(sampleRate) {
   });
 }
 
+function createScope() {
+  const analyser = audio.createAnalyser();
+  analyser.ftSize = 2048;
+  audioDestination.connect(analyser);
+
+  const container = document.getElementById("scope");
+  const canvas = document.createElement("canvas");
+  container.appendChild(canvas);
+  const ctx = canvas.getContext("2d");
+  let canvasWidth = 400;
+  let canvasHeight = 400;
+
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "rgb(43, 156, 212)";
+    ctx.fillRect(50, 50, 25, 25);
+  }
+
+  function loop() {
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  function resize() {
+    const rect = container.getBoundingClientRect();
+    canvasWidth = rect.width;
+    canvasHeight = rect.width;
+    canvas.width = Math.round(canvasWidth * devicePixelRatio);
+    canvas.height = Math.round(canvasHeight * devicePixelRatio);
+
+    canvas.style.width = `${canvasWidth}px`;
+    canvas.style.height = `${canvasHeight}px`;
+
+    canvas.style.transformOrigin = "top left";
+    ctx.scale(devicePixelRatio, devicePixelRatio);
+  }
+
+  window.addEventListener("resize", resize);
+  resize();
+  loop();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   if (window.AudioContext === undefined || window.AudioWorklet === undefined) {
     document.getElementById("sampleRateMsg").remove();
@@ -229,6 +272,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     audio = new AudioContext();
     resumeContextOnInteraction(audio);
+
+    audioDestination = audio.createGain();
+    audioDestination.connect(audio.destination);
+
+    createScope();
 
     createEditor(audio.sampleRate);
   }

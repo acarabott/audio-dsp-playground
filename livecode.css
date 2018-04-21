@@ -61,3 +61,26 @@ button.down {
   margin-left: 2px;
   padding: 1px 4px;
 }
+
+#editor {
+  width: 75%;
+  display: inline-block;
+}
+
+#main {
+  position: relative;
+}
+
+#scope {
+  position: absolute;
+  width: 20%;
+  height: 100%;
+  display: inline-block;
+  margin-left: 5%;
+  top: 0;
+}
+
+#scope canvas {
+  box-sizing: border-box;
+  border: 1px black solid;
+}
