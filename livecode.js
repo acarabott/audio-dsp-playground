@@ -179,11 +179,20 @@ function createEditor(sampleRate) {
     mode: "javascript",
     value: presets[0].code,
     lineNumbers: true,
-    lint: { esversion: 6 },
-    extraKeys: {
-      [runKeys]: () => playAudio(editor),
-      [stopKeys]: () => stopAudio(),
-    }
+    lint: { esversion: 6 }
+  });
+
+  document.addEventListener("keydown", event => {
+    const isModDown = isMac ? event.metaKey : event.ctrlKey;
+
+    if (!isModDown) { return; }
+
+    const isEnter = event.code === "Enter";
+    const isPeriod = event.code === "Period";
+
+    if (isEnter || isPeriod) { event.preventDefault(); }
+         if (isEnter)  { playAudio(editor); }
+    else if (isPeriod) { stopAudio(); }
   });
 
   const controlsEl = document.getElementById("controls");
