@@ -45,12 +45,12 @@ try {
   // unsupported
 }
 
-function getCode(setupCode, dspCode, sampleRate) {
+function getCode(setupCode, loopCode, sampleRate, processorName) {
   return `class CustomProcessor extends AudioWorkletProcessor {
     constructor() {
       super();
 
-      ${setupCode};
+      (${setupCode}).call(this);
     }
 
     process(inputs, outputs, parameters) {
@@ -59,28 +59,11 @@ function getCode(setupCode, dspCode, sampleRate) {
       const outR = outputs[0][1];
       const numFrames = outL.length;
 
-      ${dspCode}
+      (${loopCode}).call(this);
 
       return true;
     }
-  }`;
-}
-
-const defaultSetupCode = `this.freq = 666;
-this.amp = 0.1;
-this.time = 0;`;
-
-const defaultLoopCode = `for (let i = 0; i < numFrames; i++) {
-  const sine = Math.sin(2 * Math.PI * this.freq * this.time);
-  outL[i] = sine * this.amp;
-  outR[i] = sine * this.amp;
-
-  this.time += 1 / sampleRate;
-}`;
-
-
-function createProcessorCode(userCode, processorName) {
-  return `${userCode}
+  }
 
   registerProcessor("${processorName}", CustomProcessor);`;
 }
@@ -96,8 +79,7 @@ function runAudioWorklet(workletUrl, processorName) {
 function createEditor(sampleRate) {
   const isMac = CodeMirror.keyMap.default === CodeMirror.keyMap.macDefault;
   const runKeys = isMac ? "Cmd-Enter" : "Ctrl-Enter";
-  const setupWrap = document.getElementById("setup");
-  const loopWrap = document.getElementById("loop");
+  const editorWrap = document.getElementById("editor");
 
   const runButton = document.createElement("button");
   runButton.textContent = `Run: ${runKeys.replace("-", " ")}`;
@@ -108,10 +90,20 @@ function createEditor(sampleRate) {
 
   let processorCount = 0;
 
+  function splitCode(code) {
+    const split = code.search(/function\s*loop\s*\(/);
+
+    return {
+      setupCode: code.slice(0, split),
+      loopCode:  code.slice(split)
+    };
+  }
+
   function runEditorCode(editor) {
-    const userCode = getCode(editor.getDoc().getValue(), sampleRate);
+    const { setupCode, loopCode } = splitCode(editor.getDoc().getValue());
     const processorName = `processor-${processorCount++}`;
-    const code = createProcessorCode(userCode, processorName);
+    const code = getCode(setupCode, loopCode, sampleRate, processorName);
+    console.log("code:", code);
     const blob = new Blob([code], { type: "application/javascript" });
     const url = window.URL.createObjectURL(blob);
 
@@ -123,21 +115,28 @@ function createEditor(sampleRate) {
     runEditorCode(editor);
   }
 
-  // code mirror
-  const setupEditor = CodeMirror(setupWrap, {
-    mode: "javascript",
-    value: defaultSetupCode,
-    lineNumbers: true,
-    lint: { esversion: 6 },
-    extraKeys: {
-      [runKeys]: () => playAudio(setupEditor),
-      [stopKeys]: () => stopAudio(),
-    }
-  });
+  const defaultUserCode = `function setup() {
+  this.time = 0;
+}
 
-  const loopEditor = CodeMirror(loopWrap, {
+function loop() {
+  const freq = 666;
+  const amp = 0.1;
+
+  for (let i = 0; i < numFrames; i++) {
+    const sine = Math.sin(2 * Math.PI * freq * this.time);
+    outL[i] = sine * amp;
+    outR[i] = sine * amp;
+
+    this.time += 1 / sampleRate;
+  }
+}
+  `;
+
+  // code mirror
+  const loopEditor = CodeMirror(editorWrap, {
     mode: "javascript",
-    value: defaultLoopCode,
+    value: defaultUserCode,
     lineNumbers: true,
     lint: { esversion: 6 },
     extraKeys: {
@@ -146,10 +145,10 @@ function createEditor(sampleRate) {
     }
   });
 
-  loopWrap.appendChild(runButton);
+  editorWrap.appendChild(runButton);
   runButton.addEventListener("click", () => playAudio(loopEditor));
 
-  loopWrap.appendChild(stopButton);
+  editorWrap.appendChild(stopButton);
   stopButton.addEventListener("click", () => stopAudio());
 }
 
