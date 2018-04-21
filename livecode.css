@@ -4,9 +4,18 @@ body {
 
 .CodeMirror {
   border: 1px black solid;
-  height: 500px;
+  font-size: 20px;
+  height: auto;
 }
 
 .code {
   font-family: Courier;
+}
+
+button {
+  height: 50px;
+  margin: 10px 10px 0 0;
+  border: 1px black solid;
+  background: white;
+  font-size: 20px;
 }

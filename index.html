@@ -19,19 +19,20 @@
 
 </head>
 <body>
-  <h1>Audio Worklet Live Coding</h1>
+  <h1>Audio DSP Playground</h1>
 
   <div id="unsupported">
     <h2>Your browser does not support AudioWorklet</h2>
     <p>
-      AudioWorklet is currently available in Chrome 66+
-    </p>
-
-    <p>
-      <a href="https://developers.google.com/web/updates/2017/12/audio-worklet">(Source)</a>
+      AudioWorklet is currently only available in Chrome 66+
     </p>
   </div>
-  <h2 id="sampleRateMsg">Your sample rate is: <span id="sampleRate"></span></h2>
-  <div id="container"></div>
+  <div id="container">
+
+    <h2>Setup</h2>
+    <div id="setup"></div>
+    <h2>Audio Loop</h2>
+    <div id="loop"></div>
+  </div>
 </body>
 </html>

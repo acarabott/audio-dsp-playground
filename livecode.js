@@ -45,36 +45,39 @@ try {
   // unsupported
 }
 
-const defaultUserCode = `// WARNING: Must be named CustomProcessor
-class CustomProcessor extends AudioWorkletProcessor {
-  static get parameterDescriptors() {
-    return [{
-      name: 'gain',
-      defaultValue: 0.1
-    }];
-  }
+function getCode(setupCode, dspCode, sampleRate) {
+  return `class CustomProcessor extends AudioWorkletProcessor {
+    constructor() {
+      super();
 
-  constructor() {
-    super();
-
-    // can't actually query this until this.getContextInfo() is implemented
-    // update manually if you need it
-    this.sampleRate = 44100;
-  }
-
-  process(inputs, outputs, parameters) {
-    const speakers = outputs[0];
-
-    for (let i = 0; i < speakers[0].length; i++) {
-      const noise = Math.random() * 2 - 1;
-      const gain = parameters.gain[i];
-      speakers[0][i] = noise * gain;
-      speakers[1][i] = noise * gain;
+      ${setupCode};
     }
 
-    return true;
-  }
+    process(inputs, outputs, parameters) {
+      const sampleRate = ${sampleRate};
+      const outL = outputs[0][0];
+      const outR = outputs[0][1];
+      const numFrames = outL.length;
+
+      ${dspCode}
+
+      return true;
+    }
+  }`;
+}
+
+const defaultSetupCode = `this.freq = 666;
+this.amp = 0.1;
+this.time = 0;`;
+
+const defaultLoopCode = `for (let i = 0; i < numFrames; i++) {
+  const sine = Math.sin(2 * Math.PI * this.freq * this.time);
+  outL[i] = sine * this.amp;
+  outR[i] = sine * this.amp;
+
+  this.time += 1 / sampleRate;
 }`;
+
 
 function createProcessorCode(userCode, processorName) {
   return `${userCode}
@@ -90,10 +93,11 @@ function runAudioWorklet(workletUrl, processorName) {
   });
 }
 
-function createEditor() {
+function createEditor(sampleRate) {
   const isMac = CodeMirror.keyMap.default === CodeMirror.keyMap.macDefault;
   const runKeys = isMac ? "Cmd-Enter" : "Ctrl-Enter";
-  const container = document.getElementById("container");
+  const setupWrap = document.getElementById("setup");
+  const loopWrap = document.getElementById("loop");
 
   const runButton = document.createElement("button");
   runButton.textContent = `Run: ${runKeys.replace("-", " ")}`;
@@ -105,7 +109,7 @@ function createEditor() {
   let processorCount = 0;
 
   function runEditorCode(editor) {
-    const userCode = editor.getDoc().getValue();
+    const userCode = getCode(editor.getDoc().getValue(), sampleRate);
     const processorName = `processor-${processorCount++}`;
     const code = createProcessorCode(userCode, processorName);
     const blob = new Blob([code], { type: "application/javascript" });
@@ -120,21 +124,32 @@ function createEditor() {
   }
 
   // code mirror
-  const editor = CodeMirror(container, {
+  const setupEditor = CodeMirror(setupWrap, {
     mode: "javascript",
-    value: defaultUserCode,
+    value: defaultSetupCode,
     lineNumbers: true,
     lint: { esversion: 6 },
     extraKeys: {
-      [runKeys]: () => playAudio(editor),
+      [runKeys]: () => playAudio(setupEditor),
       [stopKeys]: () => stopAudio(),
     }
   });
 
-  container.appendChild(runButton);
-  runButton.addEventListener("click", () => playAudio(editor));
+  const loopEditor = CodeMirror(loopWrap, {
+    mode: "javascript",
+    value: defaultLoopCode,
+    lineNumbers: true,
+    lint: { esversion: 6 },
+    extraKeys: {
+      [runKeys]: () => playAudio(loopEditor),
+      [stopKeys]: () => stopAudio(),
+    }
+  });
 
-  container.appendChild(stopButton);
+  loopWrap.appendChild(runButton);
+  runButton.addEventListener("click", () => playAudio(loopEditor));
+
+  loopWrap.appendChild(stopButton);
   stopButton.addEventListener("click", () => stopAudio());
 }
 
@@ -147,7 +162,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("unsupported").remove();
     audio = new AudioContext();
     resumeContextOnInteraction(audio);
-    document.getElementById("sampleRate").textContent = audio.sampleRate;
-    createEditor();
+    createEditor(audio.sampleRate);
   }
 });
