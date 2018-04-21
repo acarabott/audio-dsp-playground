@@ -253,8 +253,11 @@ function createScope() {
     ctx.fillRect(0, 0, canvasWidth, canvasHeight);
     ctx.lineWidth = 1;
     ctx.strokeStyle = "rgba(200, 200, 200, 0.5)";
+    ctx.fillStyle = "rgba(200, 200, 200, 0.5)";
     ctx.beginPath();
-    const step = canvasWidth / 8;
+
+    const numSteps = 8;
+    const step = canvasWidth / numSteps;
     for (let i = step; i < canvasWidth; i += step) {
       ctx.moveTo(i, 0);
       ctx.lineTo(i, canvasHeight);
@@ -266,8 +269,9 @@ function createScope() {
     ctx.stroke();
 
     // x axis
-    ctx.strokeStyle = "rgba(200, 200, 200, 0.5)";
+    ctx.strokeStyle = "rgba(100, 100, 100, 0.5)";
     ctx.beginPath();
+    ctx.lineWidth = 2;
     ctx.moveTo(0, canvasHeight / 2);
     ctx.lineTo(canvasWidth, canvasHeight / 2);
     ctx.stroke();
@@ -287,6 +291,24 @@ function createScope() {
      ctx.lineTo(j, getY(i));
     }
     ctx.stroke();
+
+    // markers
+    ctx.fillStyle = "black";
+    ctx.font = "11px Courier";
+    ctx.textAlign = "left";
+    const numMarkers = 4;
+    const markerStep = canvasHeight / numMarkers;
+    for (let i = 0; i <= numMarkers; i++) {
+      ctx.textBaseline = i === 0            ? "top"
+                       : i === numMarkers     ? "bottom"
+                       :                      "middle";
+
+      const value = ((numMarkers - i) - (numMarkers / 2)) / numMarkers * 2;
+      ctx.textAlign = "left";
+      ctx.fillText(value, 5, i * markerStep);
+      ctx.textAlign = "right";
+      ctx.fillText(value, canvasWidth - 5, i * markerStep);
+    }
   }
 
   function loop() {
