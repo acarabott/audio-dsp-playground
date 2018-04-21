@@ -78,15 +78,38 @@ function runAudioWorklet(workletUrl, processorName) {
 
 function createEditor(sampleRate) {
   const isMac = CodeMirror.keyMap.default === CodeMirror.keyMap.macDefault;
-  const runKeys = isMac ? "Cmd-Enter" : "Ctrl-Enter";
-  const editorWrap = document.getElementById("editor");
 
-  const runButton = document.createElement("button");
-  runButton.textContent = `Run: ${runKeys.replace("-", " ")}`;
+  function createButton(text, keyCommand) {
+    const button = document.createElement("button");
+    button.textContent = text;
+    keyCommand.split("-").forEach(key => {
+      const el = document.createElement("kbd");
+      el.classList.add("key");
+      el.textContent = key.toLowerCase();
+      button.appendChild(el);
+    });
+
+
+    const onMouseUp = () => {
+      button.classList.remove("down");
+      document.removeEventListener("mouseup", onMouseUp, false);
+    };
+
+    const onMouseDown = () => {
+      button.classList.add("down");
+      document.addEventListener("mouseup", onMouseUp, false);
+    };
+
+    button.addEventListener("mousedown", onMouseDown);
+
+    return button;
+  }
+
+  const runKeys = isMac ? "Cmd-Enter" : "Ctrl-Enter";
+  const runButton = createButton("Run: ", runKeys);
 
   const stopKeys = isMac ? "Cmd-." : "Ctrl-.";
-  const stopButton = document.createElement("button");
-  stopButton.textContent = `Stop: ${stopKeys.replace("-", " ")}`;
+  const stopButton = createButton("Stop: ", stopKeys);
 
   let processorCount = 0;
 
@@ -103,7 +126,6 @@ function createEditor(sampleRate) {
     const { setupCode, loopCode } = splitCode(editor.getDoc().getValue());
     const processorName = `processor-${processorCount++}`;
     const code = getCode(setupCode, loopCode, sampleRate, processorName);
-    console.log("code:", code);
     const blob = new Blob([code], { type: "application/javascript" });
     const url = window.URL.createObjectURL(blob);
 
@@ -134,6 +156,7 @@ function loop() {
   `;
 
   // code mirror
+  const editorWrap = document.getElementById("editor");
   const loopEditor = CodeMirror(editorWrap, {
     mode: "javascript",
     value: defaultUserCode,
