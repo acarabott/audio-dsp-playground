@@ -215,7 +215,7 @@ function createScope() {
   const analyser = audio.createAnalyser();
   analyser.ftSize = 2048;
   audioDestination.connect(analyser);
-  const freqData = new Uint8Array(analyser.frequencyBinCount);
+  const freqData = new Float32Array(analyser.frequencyBinCount);
 
   const container = document.getElementById("scope");
   const canvas = document.createElement("canvas");
@@ -229,13 +229,13 @@ function createScope() {
     let i = 0;
     let last = -1;
 
-    while (i < width && (data[i] > 128)) { i++; }
+    while (i < width && (data[i] > 0)) { i++; }
 
     if (i >= width) { return 0; }
 
     let s;
-    while (i < width && ((s = data[i]) <= 128)) {
-      last = s >= 128 ? last === -1 ? i : last : -1;
+    while (i < width && ((s = data[i]) <= 0)) {
+      last = s >= 0 ? last === -1 ? i : last : -1;
       i++;
     }
 
@@ -244,10 +244,9 @@ function createScope() {
   }
 
   function render() {
-    analyser.getByteTimeDomainData(freqData);
+    analyser.getFloatTimeDomainData(freqData);
 
     const len = freqData.length;
-    const scale = canvasHeight / 256 / 2;
 
     // grid
     ctx.fillStyle = "white";
@@ -274,14 +273,18 @@ function createScope() {
     ctx.stroke();
 
     // waveform
-    let i = findZeroCrossing(freqData, canvasWidth);
     ctx.lineWidth = 2.5;
     ctx.strokeStyle = "rgb(43, 156, 212)";
     ctx.beginPath();
-    ctx.moveTo(0, (256 - freqData[i]) * scale + canvasHeight / 4);
+
+    function getY(i) {
+      return (freqData[i] * (canvasHeight / 2)) + (canvasHeight / 2);
+    }
+
+    let i = findZeroCrossing(freqData, canvasWidth);
+    ctx.moveTo(0, getY(i));
     for (let j = 0; i < len && j < canvasWidth; i++, j++) {
-     const y = (256 - freqData[i]) * scale + canvasHeight / 4;
-     ctx.lineTo(j, y);
+     ctx.lineTo(j, getY(i));
     }
     ctx.stroke();
   }
