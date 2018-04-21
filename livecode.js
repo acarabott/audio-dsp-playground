@@ -1,9 +1,13 @@
-/* global CodeMirror, AudioWorkletNode */
+/* global CodeMirror, AudioWorkletNode, Scope */
+
+import { Scope } from "./Scope.js";
 
 let audio;
 let customNode;
 let CustomAudioNode;
-let audioDestination;
+let analyserLeft;
+let analyserRight;
+let analyserSum;
 
 const presets = [
   {
@@ -17,9 +21,11 @@ function loop() {
   const amp = 0.1;
 
   for (let i = 0; i < numFrames; i++) {
-    const sine = Math.sin(2 * Math.PI * freq * this.time);
-    outL[i] = sine * amp;
-    outR[i] = sine * amp;
+    const sineL = Math.sin(2 * Math.PI * freq * this.time);
+    outL[i] = sineL * amp;
+
+    const sineR = Math.sin(2 * Math.PI * freq * 1.5 * this.time);
+    outR[i] = sineR * amp;
 
     this.time += 1 / sampleRate;
   }
@@ -62,7 +68,7 @@ function resumeContextOnInteraction(audioContext) {
 
 function stopAudio() {
   if (customNode !== undefined) {
-    customNode.disconnect(audioDestination);
+    customNode.disconnect();
     customNode = undefined;
   }
 }
@@ -94,7 +100,13 @@ function runAudioWorklet(workletUrl, processorName) {
   audio.audioWorklet.addModule(workletUrl).then(() => {
     stopAudio();
     customNode = new CustomAudioNode(audio, processorName);
-    customNode.connect(audioDestination);
+    customNode.connect(audio.destination);
+
+    const analysisSplitter = audio.createChannelSplitter(2);
+    customNode.connect(analysisSplitter);
+    analysisSplitter.connect(analyserLeft, 0);
+    analysisSplitter.connect(analyserRight, 1);
+    customNode.connect(analyserSum);
   });
 }
 
@@ -210,128 +222,36 @@ function createEditor(sampleRate) {
   });
 }
 
-// scope adapted from https://github.com/kevincennis/Scope/blob/master/dist/Scope.js
-function createScope() {
-  const analyser = audio.createAnalyser();
-  analyser.ftSize = 2048;
-  audioDestination.connect(analyser);
-  const freqData = new Float32Array(analyser.frequencyBinCount);
+function createScopes() {
+  const scopesContainer = document.getElementById("scopes");
 
-  const container = document.getElementById("scope");
-  const canvas = document.createElement("canvas");
-  container.appendChild(canvas);
+  analyserLeft = audio.createAnalyser();
+  analyserLeft.fftSize = 2048;
+  const scopeLeft = new Scope(analyserLeft, "Left", "left");
+  scopeLeft.appendTo(scopesContainer);
+  scopeLeft.edgeThreshold = 0.0;
 
-  const ctx = canvas.getContext("2d");
-  let canvasWidth = 400;
-  let canvasHeight = 400;
+  analyserRight = audio.createAnalyser();
+  analyserRight.fftSize = 2048;
+  const scopeRight = new Scope(analyserRight, "Right", "right");
+  scopeRight.appendTo(scopesContainer);
+  scopeRight.edgeThreshold = 0.0;
 
-  function findZeroCrossing(data, width) {
-    let i = 0;
-    let last = -1;
 
-    while (i < width && (data[i] > 0)) { i++; }
+  analyserSum = audio.createAnalyser();
+  analyserSum.fftSize = 2048;
+  const scopeSum = new Scope(analyserSum, "Sum", "sum");
+  scopeSum.appendTo(scopesContainer);
+  scopeSum.edgeThreshold = 0.09;
 
-    if (i >= width) { return 0; }
-
-    let s;
-    while (i < width && ((s = data[i]) <= 0)) {
-      last = s >= 0 ? last === -1 ? i : last : -1;
-      i++;
-    }
-
-    last = last < 0 ? i : last;
-    return i === width ? 0 : last;
-  }
-
-  function render() {
-    analyser.getFloatTimeDomainData(freqData);
-
-    const len = freqData.length;
-
-    // grid
-    ctx.fillStyle = "white";
-    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = "rgba(200, 200, 200, 0.5)";
-    ctx.fillStyle = "rgba(200, 200, 200, 0.5)";
-    ctx.beginPath();
-
-    const numSteps = 8;
-    const step = canvasWidth / numSteps;
-    for (let i = step; i < canvasWidth; i += step) {
-      ctx.moveTo(i, 0);
-      ctx.lineTo(i, canvasHeight);
-      for (let j = 0; j < canvasHeight; j += step) {
-        ctx.moveTo(0, j);
-        ctx.lineTo(canvasWidth, j);
-      }
-    }
-    ctx.stroke();
-
-    // x axis
-    ctx.strokeStyle = "rgba(100, 100, 100, 0.5)";
-    ctx.beginPath();
-    ctx.lineWidth = 2;
-    ctx.moveTo(0, canvasHeight / 2);
-    ctx.lineTo(canvasWidth, canvasHeight / 2);
-    ctx.stroke();
-
-    // waveform
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = "rgb(43, 156, 212)";
-    ctx.beginPath();
-
-    function getY(i) {
-      return (freqData[i] * (canvasHeight / 2)) + (canvasHeight / 2);
-    }
-
-    let i = findZeroCrossing(freqData, canvasWidth);
-    ctx.moveTo(0, getY(i));
-    for (let j = 0; i < len && j < canvasWidth; i++, j++) {
-     ctx.lineTo(j, getY(i));
-    }
-    ctx.stroke();
-
-    // markers
-    ctx.fillStyle = "black";
-    ctx.font = "11px Courier";
-    ctx.textAlign = "left";
-    const numMarkers = 4;
-    const markerStep = canvasHeight / numMarkers;
-    for (let i = 0; i <= numMarkers; i++) {
-      ctx.textBaseline = i === 0            ? "top"
-                       : i === numMarkers     ? "bottom"
-                       :                      "middle";
-
-      const value = ((numMarkers - i) - (numMarkers / 2)) / numMarkers * 2;
-      ctx.textAlign = "left";
-      ctx.fillText(value, 5, i * markerStep);
-      ctx.textAlign = "right";
-      ctx.fillText(value, canvasWidth - 5, i * markerStep);
-    }
-  }
 
   function loop() {
-    render();
+    scopeLeft.renderScope();
+    scopeRight.renderScope();
+    scopeSum.renderScope();
     requestAnimationFrame(loop);
   }
 
-  function resize() {
-    const rect = container.getBoundingClientRect();
-    canvasWidth = rect.width;
-    canvasHeight = rect.width;
-    canvas.width = Math.round(canvasWidth * devicePixelRatio);
-    canvas.height = Math.round(canvasHeight * devicePixelRatio);
-
-    canvas.style.width = `${canvasWidth}px`;
-    canvas.style.height = `${canvasHeight}px`;
-
-    canvas.style.transformOrigin = "top left";
-    ctx.scale(devicePixelRatio, devicePixelRatio);
-  }
-
-  window.addEventListener("resize", resize);
-  resize();
   loop();
 }
 
@@ -356,11 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
     audio = new AudioContext();
     resumeContextOnInteraction(audio);
 
-    audioDestination = audio.createGain();
-    audioDestination.connect(audio.destination);
-
-    createScope();
-
+    createScopes();
     createEditor(audio.sampleRate);
   }
 });

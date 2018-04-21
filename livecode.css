@@ -71,16 +71,55 @@ button.down {
   position: relative;
 }
 
-#scope {
+#scopes {
   position: absolute;
   width: 20%;
-  height: 100%;
+  min-height: 700px;
   display: inline-block;
   margin-left: 5%;
   top: 0;
+  font-size: 12px;
 }
 
-#scope canvas {
+#scopes .scope {
   box-sizing: border-box;
   border: 1px black solid;
+  min-height: 270px;
+  margin-bottom: 10px;
+}
+
+#scopes .scope h3 {
+  margin: 0 5px;
+  font-weight: bold;
+}
+
+.scope canvas {
+  margin: 5px auto;
+}
+
+.scope .controls {
+  display: flex;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+}
+
+.controls div,
+.controls input {
+  display: inline-flex;
+  padding: 0;
+}
+
+.controls div {
+  margin: 0 5px;
+  min-width: 15px;
+}
+
+.controls input {
+  margin: 0 10px;
+}
+
+#scopes .scope.left,
+#scopes .scope.right {
+  height: 200px;
 }
