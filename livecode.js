@@ -227,28 +227,41 @@ function createScopes() {
 
   analyserLeft = audio.createAnalyser();
   analyserLeft.fftSize = 2048;
-  const scopeLeft = new Scope(analyserLeft, "Left", "left");
-  scopeLeft.appendTo(scopesContainer);
-  scopeLeft.edgeThreshold = 0.0;
 
   analyserRight = audio.createAnalyser();
   analyserRight.fftSize = 2048;
-  const scopeRight = new Scope(analyserRight, "Right", "right");
-  scopeRight.appendTo(scopesContainer);
-  scopeRight.edgeThreshold = 0.0;
 
+  const scopeMono = new Scope();
+  scopeMono.appendTo(scopesContainer);
 
   analyserSum = audio.createAnalyser();
   analyserSum.fftSize = 2048;
-  const scopeSum = new Scope(analyserSum, "Sum", "sum");
+  const scopeSum = new Scope();
   scopeSum.appendTo(scopesContainer);
-  scopeSum.edgeThreshold = 0.09;
 
 
   function loop() {
-    scopeLeft.renderScope();
-    scopeRight.renderScope();
-    scopeSum.renderScope();
+    scopeMono.renderScope([
+      {
+        label: "Left",
+        analyser: analyserLeft,
+        style: "rgb(43, 156, 212)",
+        edgeThreshold: 0
+      },
+      {
+        label: "Right",
+        analyser: analyserRight,
+        style: "rgb(249, 182, 118)",
+        edgeThreshold: 0,
+      }
+    ]);
+
+    scopeSum.renderScope([{
+      label: "Sum",
+      analyser: analyserSum,
+      style: "rgb(212, 100, 100)",
+      edgeThreshold: 0.09
+    }]);
     requestAnimationFrame(loop);
   }
 

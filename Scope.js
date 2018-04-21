@@ -1,60 +1,18 @@
 // https://codepen.io/ContemporaryInsanity/pen/Mwvqpb
 
 export class Scope {
-  constructor(analyser, label="", containerClass="") {
-    this.analyser = analyser;
-
+  constructor() {
     this.container = document.createElement("div");
     this.container.classList.add("scope");
-    this.container.classList.add(containerClass);
-
-    const labelEl = document.createElement("h3");
-    labelEl.textContent = label;
 
     this.canvas = document.createElement("canvas");
     this.canvas.style.transformOrigin = "top left";
     this.ctx = this.canvas.getContext("2d");
     this.onResize = this.onResize.bind(this);
 
-    this.strokeStyle = "rgb(43, 156, 212)";
-    this._edgeThreshold = 0.14;
-
-    const controls = document.createElement("div");
-    controls.classList.add("controls");
-
-    const edgeThresholdSlider = document.createElement("input");
-    edgeThresholdSlider.type = "range";
-    edgeThresholdSlider.min = -1;
-    edgeThresholdSlider.max = 1;
-    edgeThresholdSlider.value = 0;
-    edgeThresholdSlider.step = 0.01;
-
-    this.edgeThresholdLabel = document.createElement("div");
-    this.edgeThresholdLabel.textContent = "Adjust stability";
-
-    this.edgeThresholdValue = document.createElement("div");
-
-    edgeThresholdSlider.addEventListener("input", () => {
-      this.edgeThreshold = edgeThresholdSlider.valueAsNumber;
-    });
-    this.edgeThreshold = 0.14;
-
-    this.container.appendChild(labelEl);
     this.container.appendChild(this.canvas);
-    controls.appendChild(this.edgeThresholdLabel);
-    controls.appendChild(edgeThresholdSlider);
-    controls.appendChild(this.edgeThresholdValue);
-    this.container.appendChild(controls);
-
     this.onResize();
     window.addEventListener("resize", this.onResize);
-  }
-
-  get edgeThreshold() { return this._edgeThreshold; }
-  set edgeThreshold(edgeThreshold) {
-    this._edgeThreshold = edgeThreshold;
-    this.edgeThresholdValue.textContent = `${this.edgeThreshold.toFixed(2)}`;
-
   }
 
   get canvasWidth() { return this.canvas.width / devicePixelRatio; }
@@ -74,7 +32,8 @@ export class Scope {
     this.onResize();
   }
 
-  renderScope() {
+  // array of objects { analyser, strokeStyle, edgeThreshold }
+  renderScope(toRender = []) {
     // grid
     this.ctx.fillStyle = "white";
     this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
@@ -83,21 +42,18 @@ export class Scope {
     this.ctx.fillStyle = "rgba(200, 200, 200, 0.5)";
     this.ctx.beginPath();
 
-    {
-      const numSteps = 8;
-      const step = this.canvasWidth / numSteps;
-      for (let i = step; i < this.canvasWidth; i += step) {
-        this.ctx.moveTo(i, 0);
-        this.ctx.lineTo(i, this.canvasHeight);
-      }
+    const numHorzSteps = 8;
+    const horzStep = this.canvasWidth / numHorzSteps;
+    for (let i = horzStep; i < this.canvasWidth; i += horzStep) {
+      this.ctx.moveTo(i, 0);
+      this.ctx.lineTo(i, this.canvasHeight);
     }
-    {
-      const numSteps = 4;
-      const step = this.canvasHeight / numSteps;
-      for (let i = 0; i < this.canvasHeight; i += step) {
-        this.ctx.moveTo(0, i);
-        this.ctx.lineTo(this.canvasWidth, i);
-      }
+
+    const numVertSteps = 4;
+    const vertStep = this.canvasHeight / numVertSteps;
+    for (let i = 0; i < this.canvasHeight; i += vertStep) {
+      this.ctx.moveTo(0, i);
+      this.ctx.lineTo(this.canvasWidth, i);
     }
     this.ctx.stroke();
 
@@ -109,38 +65,45 @@ export class Scope {
     this.ctx.lineTo(this.canvasWidth, this.canvasHeight / 2);
     this.ctx.stroke();
 
-    // waveform
-    const timeData = new Float32Array(this.analyser.frequencyBinCount);
-    let risingEdge = 0;
+    // waveforms
 
-    this.analyser.getFloatTimeDomainData(timeData);
+    toRender.forEach(({ analyser, style = "rgb(43, 156, 212)", edgeThreshold = 0 }) => {
+      if (analyser === undefined) { return; }
 
-    this.ctx.lineWidth = 2;
-    this.ctx.strokeStyle = this.strokeStyle;
-    this.ctx.beginPath();
+      const timeData = new Float32Array(analyser.frequencyBinCount);
+      let risingEdge = 0;
 
-    while (timeData[risingEdge] > 0 &&
-           risingEdge <= this.canvasWidth &&
-           risingEdge < timeData.length) {
-      risingEdge++;
-    }
+      analyser.getFloatTimeDomainData(timeData);
 
-    if (risingEdge >= this.canvasWidth) { risingEdge = 0; }
+      this.ctx.lineWidth = 2;
+      this.ctx.strokeStyle = style;
 
-    while (timeData[risingEdge] < this.edgeThreshold &&
-           risingEdge <= this.canvasWidth  &&
-           risingEdge< timeData.length) {
-      risingEdge++;
-    }
+      this.ctx.beginPath();
 
-    if (risingEdge >= this.canvasWidth) { risingEdge = 0; }
+      while (timeData[risingEdge] > 0 &&
+             risingEdge <= this.canvasWidth &&
+             risingEdge < timeData.length) {
+        risingEdge++;
+      }
 
-    for (let x = risingEdge; x < timeData.length && x - risingEdge < this.canvasWidth; x++) {
-      const y = this.canvasHeight - (((timeData[x] + 1) / 2) * this.canvasHeight);
-      this.ctx.lineTo(x - risingEdge, y);
-    }
+      if (risingEdge >= this.canvasWidth) { risingEdge = 0; }
 
-    this.ctx.stroke();
+
+      while (timeData[risingEdge] < edgeThreshold &&
+             risingEdge <= this.canvasWidth  &&
+             risingEdge< timeData.length) {
+        risingEdge++;
+      }
+
+      if (risingEdge >= this.canvasWidth) { risingEdge = 0; }
+
+      for (let x = risingEdge; x < timeData.length && x - risingEdge < this.canvasWidth; x++) {
+        const y = this.canvasHeight - (((timeData[x] + 1) / 2) * this.canvasHeight);
+        this.ctx.lineTo(x - risingEdge, y);
+      }
+
+      this.ctx.stroke();
+    });
 
     // markers
     this.ctx.fillStyle = "black";
@@ -159,6 +122,25 @@ export class Scope {
       this.ctx.textAlign = "right";
       this.ctx.fillText(value, this.canvasWidth - 5, i * markerStep);
     }
+
+    // key
+
+    toRender.forEach(({ style, label }, i) => {
+      if (label === undefined) { return; }
+
+      const dim = 15;
+      const gap = 10;
+      const y = (i * dim) + (gap * i);
+      this.ctx.fillStyle = style;
+
+      this.ctx.fillRect(horzStep, y, dim, dim);
+
+      this.ctx.fillStyle = "black";
+      this.ctx.textBaseline = "top";
+      this.ctx.textAlign = "left";
+      this.ctx.font = `${dim}px Courier`;
+      this.ctx.fillText(label, horzStep + dim + gap, y);
+    });
   }
 
   renderSpectrum() {
@@ -179,12 +161,11 @@ export class Scope {
     for (var x = 0; x < width; x++)
       ctx.lineTo(x, height - freqData[x] * scaling);
 
-    ctx.stroke();
   }
 
   onResize() {
     this.canvasWidth = this.container.clientWidth;
-    this.canvasHeight = this.container.clientHeight * 0.7;
+    this.canvasHeight = this.container.clientHeight;
     this.ctx.scale(devicePixelRatio, devicePixelRatio);
   }
 }
