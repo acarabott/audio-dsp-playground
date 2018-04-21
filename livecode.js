@@ -114,12 +114,23 @@ function createEditor(sampleRate) {
   let processorCount = 0;
 
   function splitCode(code) {
-    const split = code.search(/function\s*loop\s*\(/);
+    function cleanFunction(functionString) {
+      let clean = functionString.trim();
 
-    return {
-      setupCode: code.slice(0, split),
-      loopCode:  code.slice(split)
-    };
+      if (clean.length === 0) { return "() => {}"; }
+
+      if (clean[clean.length - 1] === ";") {
+        clean = clean.slice(0, clean.length - 1);
+      }
+
+      return clean;
+    }
+
+    const split = code.search(/function\s*loop\s*\(/);
+    const setupCode = cleanFunction(code.slice(0, split));
+    const loopCode = cleanFunction(code.slice(split));
+
+    return { setupCode, loopCode };
   }
 
   function runEditorCode(editor) {
