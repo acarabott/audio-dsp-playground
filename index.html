@@ -19,15 +19,17 @@
 
 </head>
 <body>
-  <h1>Audio DSP Playground</h1>
 
-  <div id="unsupported">
-    <h2>Your browser does not support AudioWorklet</h2>
-    <p>
-      AudioWorklet is currently only available in Chrome 66+
-    </p>
-  </div>
   <div id="container">
+    <div id="unsupported">
+      <h2>Your browser does not support AudioWorklet</h2>
+      <p>
+        AudioWorklet is currently only available in Chrome 66+
+      </p>
+    </div>
+    <h1>Audio DSP Playground</h1>
+    <button id="sine" class="preset">Sine Wave</button>
+    <button id="noise" class="preset">White Noise</button>
     <div id="editor"></div>
   </div>
 </body>

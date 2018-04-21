@@ -2,6 +2,15 @@ body {
   font-family: sans-serif;
 }
 
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 100;
+}
+
+#container {
+  width: 90vw;
+  margin: auto;
+}
+
 .CodeMirror {
   border: 1px black solid;
   font-size: 20px;
@@ -18,7 +27,7 @@ button {
   box-shadow: 2px 2px black;
   font-size: 20px;
   height: 50px;
-  margin: 10px 10px 0 0;
+  margin: 10px 10px 10px 0;
 }
 
 button:hover,
@@ -29,6 +38,10 @@ button:focus {
 
 button.down {
   box-shadow: 2px 2px rgb(43, 156, 212);
+}
+
+button.preset {
+  height: 30px;
 }
 
 .key-wrap {
