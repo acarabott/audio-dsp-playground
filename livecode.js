@@ -210,22 +210,80 @@ function createEditor(sampleRate) {
   });
 }
 
+// scope adapted from https://github.com/kevincennis/Scope/blob/master/dist/Scope.js
 function createScope() {
   const analyser = audio.createAnalyser();
   analyser.ftSize = 2048;
   audioDestination.connect(analyser);
+  const freqData = new Uint8Array(analyser.frequencyBinCount);
 
   const container = document.getElementById("scope");
   const canvas = document.createElement("canvas");
   container.appendChild(canvas);
+
   const ctx = canvas.getContext("2d");
   let canvasWidth = 400;
   let canvasHeight = 400;
 
+  function findZeroCrossing(data, width) {
+    let i = 0;
+    let last = -1;
+
+    while (i < width && (data[i] > 128)) { i++; }
+
+    if (i >= width) { return 0; }
+
+    let s;
+    while (i < width && ((s = data[i]) <= 128)) {
+      last = s >= 128 ? last === -1 ? i : last : -1;
+      i++;
+    }
+
+    last = last < 0 ? i : last;
+    return i === width ? 0 : last;
+  }
+
   function render() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "rgb(43, 156, 212)";
-    ctx.fillRect(50, 50, 25, 25);
+    analyser.getByteTimeDomainData(freqData);
+
+    const len = freqData.length;
+    const scale = canvasHeight / 256 / 2;
+
+    // grid
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = "rgba(200, 200, 200, 0.5)";
+    ctx.beginPath();
+    const step = canvasWidth / 8;
+    for (let i = step; i < canvasWidth; i += step) {
+      ctx.moveTo(i, 0);
+      ctx.lineTo(i, canvasHeight);
+      for (let j = 0; j < canvasHeight; j += step) {
+        ctx.moveTo(0, j);
+        ctx.lineTo(canvasWidth, j);
+      }
+    }
+    ctx.stroke();
+
+    // x axis
+    ctx.strokeStyle = "rgba(200, 200, 200, 0.5)";
+    ctx.beginPath();
+    ctx.moveTo(0, canvasHeight / 2);
+    ctx.lineTo(canvasWidth, canvasHeight / 2);
+    ctx.stroke();
+
+    // waveform
+    let i = findZeroCrossing(freqData, canvasWidth);
+    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = "rgb(43, 156, 212)";
+    ctx.beginPath();
+    ctx.moveTo(0, (256 - freqData[i]) * scale + canvasHeight / 4);
+    for (let j = 0; i < len && j < canvasWidth; i++, j++) {
+     const y = (256 - freqData[i]) * scale + canvasHeight / 4;
+     ctx.lineTo(j, y);
+    }
+    ctx.stroke();
   }
 
   function loop() {
