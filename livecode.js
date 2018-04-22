@@ -332,8 +332,7 @@ function createScopes() {
 
 
   function loop() {
-    const active = toRender.filter(item => item.active);
-    if (active.length > 0) { scopeOsc.renderScope(active); }
+    scopeOsc.renderScope(toRender.filter(item => item.active));
 
     scopeSpectrum.renderSpectrum(analyserSum);
     requestAnimationFrame(loop);

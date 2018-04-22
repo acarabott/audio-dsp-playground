@@ -185,8 +185,24 @@ export class Scope {
   }
 
   onResize() {
-    this.canvasWidth = this.container.clientWidth;
-    this.canvasHeight = this.container.clientHeight;
+    this.canvasWidth = 0;
+    this.canvasHeight = 0;
+
+    const rect = this.container.getBoundingClientRect();
+    const style = getComputedStyle(this.container);
+
+    let borderLeft = style.getPropertyValue("border-left-width");
+    borderLeft = borderLeft === "" ? 0 : parseFloat(borderLeft, 10);
+    let borderRight = style.getPropertyValue("border-right-width");
+    borderRight = borderRight === "" ? 0 : parseFloat(borderRight, 10);
+    this.canvasWidth = rect.width - borderLeft - borderRight;
+
+    let borderTop = style.getPropertyValue("border-top-width");
+    borderTop = borderTop === "" ? 0 : parseFloat(borderTop, 10);
+    let borderBottom = style.getPropertyValue("border-bottom-width");
+    borderBottom = borderBottom === "" ? 0 : parseFloat(borderBottom, 10);
+    this.canvasHeight = rect.height - borderTop - borderBottom;
+
     this.ctx.scale(devicePixelRatio, devicePixelRatio);
   }
 }
