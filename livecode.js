@@ -339,6 +339,7 @@ function createScopes() {
     slider.step = 0.01;
     slider.value = item.edgeThreshold;
     slider.addEventListener("input", () => item.edgeThreshold = slider.valueAsNumber);
+    slider.title = "Stability adjustment";
     wrap.appendChild(slider);
 
     scopeOscControls.appendChild(wrap);
