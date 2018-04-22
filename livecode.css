@@ -93,10 +93,6 @@ button.down {
   font-weight: bold;
 }
 
-.scope canvas {
-  margin: 5px auto;
-}
-
 .scope .controls {
   display: flex;
   height: 30px;
@@ -119,7 +115,3 @@ button.down {
   margin: 0 10px;
 }
 
-#scopes .scope.left,
-#scopes .scope.right {
-  height: 200px;
-}

@@ -226,18 +226,34 @@ function createScopes() {
   const scopesContainer = document.getElementById("scopes");
 
   analyserLeft = audio.createAnalyser();
-  analyserLeft.fftSize = 2048;
+  window.analyser = analyserLeft;
+  analyserLeft.fftSize = Math.pow(2, 11);
+  analyserLeft.minDecibels = -96;
+  analyserLeft.maxDecibels = 0;
+  analyserLeft.smoothingTimeConstant = 0.85;
+
 
   analyserRight = audio.createAnalyser();
-  analyserRight.fftSize = 2048;
+  analyserRight.fftSize = Math.pow(2, 11);
+  analyserRight.minDecibels = -96;
+  analyserRight.maxDecibels = 0;
+  analyserRight.smoothingTimeConstant = 0.85;
+
 
   const scopeMono = new Scope();
   scopeMono.appendTo(scopesContainer);
 
   analyserSum = audio.createAnalyser();
-  analyserSum.fftSize = 2048;
+  analyserSum.fftSize = Math.pow(2, 11);
+  analyserSum.minDecibels = -96;
+  analyserSum.maxDecibels = 0;
+  analyserSum.smoothingTimeConstant = 0.85;
+
   const scopeSum = new Scope();
   scopeSum.appendTo(scopesContainer);
+
+  const scopeSpectrum = new Scope();
+  scopeSpectrum.appendTo(scopesContainer);
 
 
   function loop() {
@@ -245,13 +261,13 @@ function createScopes() {
       {
         label: "Left",
         analyser: analyserLeft,
-        style: "rgb(43, 156, 212)",
+        style: "rgba(43, 156, 212, 0.9)",
         edgeThreshold: 0
       },
       {
         label: "Right",
         analyser: analyserRight,
-        style: "rgb(249, 182, 118)",
+        style: "rgba(249, 182, 118, 0.9)",
         edgeThreshold: 0,
       }
     ]);
@@ -262,6 +278,9 @@ function createScopes() {
       style: "rgb(212, 100, 100)",
       edgeThreshold: 0.09
     }]);
+
+    scopeSpectrum.renderSpectrum(analyserSum);
+
     requestAnimationFrame(loop);
   }
 

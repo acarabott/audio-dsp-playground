@@ -143,23 +143,63 @@ export class Scope {
     });
   }
 
-  renderSpectrum() {
-    var width = ctx.canvas.width;
-    var height = ctx.canvas.height;
-    var freqData = new Uint8Array(analyser.frequencyBinCount);
-    var scaling = height / 256;
+  renderSpectrum(analyser) {
+    const freqData = new Uint8Array(analyser.frequencyBinCount);
 
     analyser.getByteFrequencyData(freqData);
 
-    ctx.fillStyle = 'rgba(0, 20, 0, 0.1)';
-    ctx.fillRect(0, 0, width, height);
+    this.ctx.fillStyle = "white";
+    this.ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
 
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = 'rgb(0, 200, 0)';
-    ctx.beginPath();
+    this.ctx.lineWidth = 2;
+    this.ctx.strokeStyle = "rgb(43, 156, 212)";
+    this.ctx.beginPath();
 
-    for (var x = 0; x < width; x++)
-      ctx.lineTo(x, height - freqData[x] * scaling);
+    for (let i = 0; i < freqData.length; i++) {
+      const x = (Math.log(i / 1)) / (Math.log(freqData.length / 1)) * this.canvasWidth;
+      const height = (freqData[i] * this.canvasHeight) / 256;
+      this.ctx.lineTo(x, this.canvasHeight - height);
+    }
+    this.ctx.stroke();
+
+    const fontSize = 12;
+
+    // frequencies
+    function explin(value, inMin, inMax, outMin, outMax) {
+      inMin = Math.max(inMin, 1);
+      outMin = Math.max(outMin, 1);
+      return Math.log10(value / inMin) / Math.log10(inMax / inMin) * (outMax - outMin) + outMin;
+    }
+
+    const nyquist = analyser.context.sampleRate / 2;
+    [0, 100, 300, 1000, 3000, 10000, 20000].forEach(freq => {
+      const minFreq = 20;
+      const x = freq <= 0
+        ? fontSize - 5
+        : explin(freq, minFreq, nyquist, 0, this.canvasWidth);
+
+      this.ctx.fillStyle = "black";
+      this.ctx.textBaseline = "middle";
+      this.ctx.textAlign = "right";
+      this.ctx.font = `${fontSize}px Courier`;
+      this.ctx.save();
+      this.ctx.translate(x, this.canvasHeight - 5);
+      this.ctx.rotate(Math.PI * 0.5);
+      this.ctx.fillText(`${freq.toFixed(0)}hz`, 0, 0);
+      this.ctx.restore();
+    });
+
+    [0, -3, -6, -12].forEach(db => {
+      const x = 5;
+      const amp = Math.pow(10, db * 0.05);
+      const y = (1 - amp) * this.canvasHeight;
+
+      this.ctx.fillStyle = "black";
+      this.ctx.textBaseline = "top";
+      this.ctx.textAlign = "left";
+      this.ctx.font = `${fontSize}px Courier`;
+      this.ctx.fillText(`${db.toFixed(0)}db`, x, y);
+    });
 
   }
 
