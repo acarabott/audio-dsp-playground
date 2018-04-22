@@ -11,7 +11,7 @@ This is a higher level version of my
 
 - [CodeMirror](codemirror.net)
 - [JSHint](http://jshint.com/)
-- 🤟
+- 🎧
 
 ## Authors
 
