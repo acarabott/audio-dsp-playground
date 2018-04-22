@@ -26,17 +26,18 @@ const presets = [
     name: "Sine Wave",
     code: `function setup(state, sampleRate) {
   state.time = 0;
-  state.freq = 666;
-  state.amp = 0.1;
 }
 
 function loop(numFrames, outL, outR, sampleRate, state) {
-  for (let i = 0; i < numFrames; i++) {
-    const sineL = Math.sin(2 * Math.PI * state.freq * state.time);
-    outL[i] = sineL * state.amp;
+  const freq = 666;
+  const amp = 0.1;
 
-    const sineR = Math.sin(2 * Math.PI * state.freq * 1.5 * state.time);
-    outR[i] = sineR * state.amp;
+  for (let i = 0; i < numFrames; i++) {
+    const sineL = Math.sin(2 * Math.PI * freq * state.time);
+    outL[i] = sineL * amp;
+
+    const sineR = Math.sin(2 * Math.PI * freq * 1.5 * state.time);
+    outR[i] = sineR * amp;
 
     state.time += 1 / sampleRate;
   }
