@@ -1,10 +1,8 @@
 # Audio DSP Playground
 
-A WebAudio API playground for DSP.
-
 ### [Demo](https://acarabott.github.io/audio-dsp-playground/)
 
-![Audio DSP Playground](screenshot.png)
+![Audio DSP Playground](img/screenshot.png)
 
 This is a higher level version of my
 [Audio Worklet Live Coding](https://github.com/acarabott/audio-worklet-live-coding/) demo, which exposes more of the guts of an Audio Worklet.
