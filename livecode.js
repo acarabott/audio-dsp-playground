@@ -133,20 +133,22 @@ function createToggle(text, _onMouseUp = () => {}) {
   button.classList.add("toggle");
   button.textContent = text;
 
-  const onMouseUp = () => {
+  const onMouseUp = event => {
     button.classList.remove("down");
 
-    button.classList.contains("active")
-      ? button.classList.remove("active")
-      : button.classList.add("active");
+    if (event.target === button) {
+      button.classList.contains("active")
+        ? button.classList.remove("active")
+        : button.classList.add("active");
+    }
 
     _onMouseUp(button.classList.contains("active"));
-    button.removeEventListener("mouseup", onMouseUp, false);
+    document.removeEventListener("mouseup", onMouseUp, false);
   };
 
   const onMouseDown = () => {
     button.classList.add("down");
-    button.addEventListener("mouseup", onMouseUp, false);
+    document.addEventListener("mouseup", onMouseUp, false);
   };
 
   button.addEventListener("mousedown", onMouseDown);
