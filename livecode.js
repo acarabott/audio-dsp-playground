@@ -234,8 +234,26 @@ function createEditor(sampleRate) {
     const isPeriod = event.code === "Period";
 
     if (isEnter || isPeriod) { event.preventDefault(); }
-         if (isEnter)  { playAudio(editor); }
-    else if (isPeriod) { stopAudio(); }
+
+    if (isEnter)  {
+      playAudio(editor);
+      runButton.classList.add("down");
+      setTimeout(() => {
+        if (runButton.classList.contains("down")) {
+          runButton.classList.remove("down");
+        }
+      }, 200);
+    }
+    else if (isPeriod) {
+      stopAudio();
+      stopButton.classList.add("down");
+      setTimeout(() => {
+        if (stopButton.classList.contains("down")) {
+          stopButton.classList.remove("down");
+        }
+      }, 200);
+
+    }
   });
 
   const controlsEl = document.getElementById("controls");
