@@ -10,32 +10,9 @@ let analyserRight;
 let analyserSum;
 
 const presets = [
-  {
-    name: "Sine Wave",
-    code: `function setup() {
-  this.time = 0;
-}
-
-function loop() {
-  const freq = 666;
-  const amp = 0.1;
-
-  for (let i = 0; i < numFrames; i++) {
-    const sineL = Math.sin(2 * Math.PI * freq * this.time);
-    outL[i] = sineL * amp;
-
-    const sineR = Math.sin(2 * Math.PI * freq * 1.5 * this.time);
-    outR[i] = sineR * amp;
-
-    this.time += 1 / sampleRate;
-  }
-}
-  `
-  },
-
-  {
-    name: "White Noise",
-    code: `function loop() {
+    {
+      name: "White Noise",
+      code: `function loop(numFrames, outL, outR) {
   const amp = 0.1;
   for (let i = 0; i < numFrames; i++) {
     const noise = Math.random() * 2 - 1;
@@ -43,7 +20,28 @@ function loop() {
     outR[i] = noise * amp;
   }
 }
-  `
+`
+    },
+  {
+    name: "Sine Wave",
+    code: `function setup(state, sampleRate) {
+  state.time = 0;
+  state.freq = 666;
+  state.amp = 0.1;
+}
+
+function loop(numFrames, outL, outR, sampleRate, state) {
+  for (let i = 0; i < numFrames; i++) {
+    const sineL = Math.sin(2 * Math.PI * state.freq * state.time);
+    outL[i] = sineL * state.amp;
+
+    const sineR = Math.sin(2 * Math.PI * state.freq * 1.5 * state.time);
+    outR[i] = sineR * state.amp;
+
+    state.time += 1 / sampleRate;
+  }
+}
+`
   }
 ];
 
@@ -78,16 +76,17 @@ function getCode(setupCode, loopCode, sampleRate, processorName) {
     constructor() {
       super();
 
-      (${setupCode}).call(this);
+      this.sampleRate = ${sampleRate};
+      this.state = {};
+      (${setupCode}).call(this, this.state, this.sampleRate);
     }
 
     process(inputs, outputs, parameters) {
-      const sampleRate = ${sampleRate};
       const outL = outputs[0][0];
       const outR = outputs[0][1];
       const numFrames = outL.length;
 
-      (${loopCode}).call(this);
+      (${loopCode}).call(this, numFrames, outL, outR, this.sampleRate, this.state);
 
       return true;
     }
