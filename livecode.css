@@ -7,6 +7,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 #container {
+  position: relative;
   width: 90vw;
   margin: auto;
 }
@@ -16,6 +17,7 @@ h1, h2, h3, h4, h5, h6 {
   border: 1px black solid;
   font-size: 20px;
   height: auto;
+  width: 100%;
 }
 
 .code {
@@ -103,22 +105,19 @@ button.stop.down {
   padding: 1px 4px;
 }
 
-#editor {
-  width: 70%;
-  display: inline-block;
+#terminal {
+  width: 75%;
 }
 
 #main {
-  position: relative;
+  display: flex
 }
 
 #scopes {
-  position: absolute;
-  width: 25%;
+  width: 20%;
   min-height: 700px;
   display: inline-block;
   margin-left: 2vw;
-  top: 0;
   font-size: 12px;
 }
 
@@ -197,3 +196,7 @@ canvas {
   margin: 0 10px;
 }
 
+#credits {
+  position: relative;
+  bottom: 0;
+}

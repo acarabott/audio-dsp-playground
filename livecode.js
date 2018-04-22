@@ -221,7 +221,8 @@ function createEditor(sampleRate) {
     mode: "javascript",
     value: presets[0].code,
     lineNumbers: true,
-    lint: { esversion: 6 }
+    lint: { esversion: 6 },
+    viewportMargin: Infinity
   });
 
   document.addEventListener("keydown", event => {
