@@ -1,24 +1,22 @@
-# Audio Worklet Live Coding
+# Audio DSP Playground
 
-Does what it says on the tin.
+A WebAudio API playground for DSP.
 
-[Demo](https://acarabott.github.io/audio-worklet-live-coding/)
+### [Demo](https://acarabott.github.io/audio-dsp-playground/)
 
-## How it works
+![Audio DSP Playground](screenshot.png)
 
-Takes the output of CodeMirror, turns it into a Blob, generates a URL for the Blob, loads it as a module.
+This is a higher level version of my
+[Audio Worklet Live Coding](https://github.com/acarabott/audio-worklet-live-coding/) demo, which exposes more of the guts of an Audio Worklet.
 
-Each time the script is loaded a new id is generated for the processor, and this is passed to the `CustomAudioNode` constructor. Hence not being able to change the name of `CustomAudioNode`.
-
-### Limitations
-
-Stereo output, no inputs. This would only require adding some additional UI boxes and passing the values to `CustomAudioNode`, but isn't really necessary for this demo.
-
-## Libs
+## Built with
 
 - [CodeMirror](codemirror.net)
 - [JSHint](http://jshint.com/)
+- 🤟
 
-## Author
+## Authors
 
 Arthur Carabott [arthurcarabott.com](http://arthurcarabott.com)
+
+Stabilised Oscilloscope code adapted from <a href="https://codepen.io/ContemporaryInsanity/pen/Mwvqpb">Ewen</a>
