@@ -129,6 +129,33 @@ function createButton(text) {
   return button;
 }
 
+function createToggle(text, _onMouseUp = () => {}) {
+  const button = document.createElement("button");
+  button.classList.add("toggle");
+  button.textContent = text;
+
+  const onMouseUp = () => {
+    button.classList.remove("down");
+
+    button.classList.contains("active")
+      ? button.classList.remove("active")
+      : button.classList.add("active");
+
+    _onMouseUp(button.classList.contains("active"));
+    button.removeEventListener("mouseup", onMouseUp, false);
+  };
+
+  const onMouseDown = () => {
+    button.classList.add("down");
+    button.addEventListener("mouseup", onMouseUp, false);
+  };
+
+  button.addEventListener("mousedown", onMouseDown);
+
+  return button;
+}
+
+
 function addKeyCommandToButton(button, keyCommand) {
   keyCommand.split("-").forEach(key => {
     const el = document.createElement("kbd");
@@ -143,10 +170,12 @@ function createEditor(sampleRate) {
 
   const runKeys = isMac ? "Cmd-Enter" : "Ctrl-Enter";
   const runButton = createButton("Run: ");
+  runButton.classList.add("run");
   addKeyCommandToButton(runButton, runKeys);
 
   const stopKeys = isMac ? "Cmd-." : "Ctrl-.";
   const stopButton = createButton("Stop: ");
+  stopButton.classList.add("stop");
   addKeyCommandToButton(stopButton, stopKeys);
 
   let processorCount = 0;
@@ -232,16 +261,11 @@ function createScopes() {
   analyserLeft.maxDecibels = 0;
   analyserLeft.smoothingTimeConstant = 0.85;
 
-
   analyserRight = audio.createAnalyser();
   analyserRight.fftSize = Math.pow(2, 11);
   analyserRight.minDecibels = -96;
   analyserRight.maxDecibels = 0;
   analyserRight.smoothingTimeConstant = 0.85;
-
-
-  const scopeMono = new Scope();
-  scopeMono.appendTo(scopesContainer);
 
   analyserSum = audio.createAnalyser();
   analyserSum.fftSize = Math.pow(2, 11);
@@ -249,38 +273,69 @@ function createScopes() {
   analyserSum.maxDecibels = 0;
   analyserSum.smoothingTimeConstant = 0.85;
 
-  const scopeSum = new Scope();
-  scopeSum.appendTo(scopesContainer);
+  const scopeOsc = new Scope();
+
+  const scopeOscControls = document.createElement("div");
+  scopeOscControls.classList.add("osc-controls");
+
+  const toRender = [
+    {
+      label: "Left",
+      analyser: analyserLeft,
+      style: "rgba(43, 156, 212, 0.9)",
+      edgeThreshold: 0,
+      active: true
+    },
+    {
+      label: "Right",
+      analyser: analyserRight,
+      style: "rgba(249, 182, 118, 0.9)",
+      edgeThreshold: 0,
+      active: true
+    },
+    {
+      label: "Sum",
+      analyser: analyserSum,
+      style: "rgb(212, 100, 100)",
+      edgeThreshold: 0.09,
+      active: false
+    }
+  ];
+
+  toRender.map(item => {
+    const wrap = document.createElement("div");
+    wrap.classList.add("scope-control");
+    const button = createToggle(item.label, isActive => item.active = isActive);
+    button.style.background = item.style;
+    button.style.color = "black";
+    if (item.active) { button.classList.add("active"); }
+    wrap.appendChild(button);
+
+    const slider = document.createElement("input");
+    slider.type = "range";
+    slider.min = -1;
+    slider.max = 1;
+    slider.step = 0.01;
+    slider.value = item.edgeThreshold;
+    slider.addEventListener("input", () => item.edgeThreshold = slider.valueAsNumber);
+    wrap.appendChild(slider);
+
+    scopeOscControls.appendChild(wrap);
+  });
+
+  scopesContainer.appendChild(scopeOscControls);
+
+  scopeOsc.appendTo(scopesContainer);
 
   const scopeSpectrum = new Scope();
   scopeSpectrum.appendTo(scopesContainer);
 
 
   function loop() {
-    scopeMono.renderScope([
-      {
-        label: "Left",
-        analyser: analyserLeft,
-        style: "rgba(43, 156, 212, 0.9)",
-        edgeThreshold: 0
-      },
-      {
-        label: "Right",
-        analyser: analyserRight,
-        style: "rgba(249, 182, 118, 0.9)",
-        edgeThreshold: 0,
-      }
-    ]);
-
-    scopeSum.renderScope([{
-      label: "Sum",
-      analyser: analyserSum,
-      style: "rgb(212, 100, 100)",
-      edgeThreshold: 0.09
-    }]);
+    const active = toRender.filter(item => item.active);
+    if (active.length > 0) { scopeOsc.renderScope(active); }
 
     scopeSpectrum.renderSpectrum(analyserSum);
-
     requestAnimationFrame(loop);
   }
 

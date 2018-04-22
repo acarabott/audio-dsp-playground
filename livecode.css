@@ -30,14 +30,52 @@ button {
   margin: 10px 10px 10px 0;
 }
 
-button:hover,
+button:hover {
+  box-shadow: 4px 4px rgb(200, 200, 200);
+}
+
 button:focus {
-  box-shadow: 4px 4px rgb(43, 156, 212);
+  border-color: rgb(200, 200, 200);
   outline: none;
 }
 
-button.down {
+button.down,
+button.active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px rgb(200, 200, 200);
+}
+
+button.toggle {
+  opacity: 0.5;
+}
+
+button.toggle.down,
+button.toggle.active {
+  opacity: 1.0
+}
+
+button.run:hover {
+  box-shadow: 4px 4px rgb(43, 156, 212);
+}
+
+button.run:focus {
+  border-color: rgb(43, 156, 212);
+}
+
+button.run.down {
   box-shadow: 2px 2px rgb(43, 156, 212);
+}
+
+button.stop:hover {
+  box-shadow: 4px 4px rgb(212, 100, 100);
+}
+
+button.stop:focus {
+  border-color: rgb(212, 100, 100);
+}
+
+button.stop.down {
+  box-shadow: 2px 2px rgb(212, 100, 100);
 }
 
 #presets button {
@@ -63,7 +101,7 @@ button.down {
 }
 
 #editor {
-  width: 75%;
+  width: 70%;
   display: inline-block;
 }
 
@@ -73,7 +111,7 @@ button.down {
 
 #scopes {
   position: absolute;
-  width: 20%;
+  width: 25%;
   min-height: 700px;
   display: inline-block;
   margin-left: 5%;
@@ -93,11 +131,41 @@ button.down {
   font-weight: bold;
 }
 
+.osc-controls {
+  display: flex;
+  justify-content: space-between;
+}
+
+.scope-control {
+  flex: 0 0 auto;
+  width: 30%;
+  height: 90px;
+}
+
+.scope-control input,
+.scope-control button {
+  display: block;
+  width: 100%;
+  height: 50%;
+}
+
 .scope .controls {
   display: flex;
   height: 30px;
   align-items: center;
   justify-content: center;
+}
+
+#scopes button {
+  margin: 0;
+}
+
+#scopes button.down.active {
+  box-shadow: 2px 2px rgb(0, 0, 0);
+}
+
+#scopes button.active:focus {
+  border-color: rgb(0, 0, 0);
 }
 
 .controls div,

@@ -122,25 +122,6 @@ export class Scope {
       this.ctx.textAlign = "right";
       this.ctx.fillText(value, this.canvasWidth - 5, i * markerStep);
     }
-
-    // key
-
-    toRender.forEach(({ style, label }, i) => {
-      if (label === undefined) { return; }
-
-      const dim = 15;
-      const gap = 10;
-      const y = (i * dim) + (gap * i);
-      this.ctx.fillStyle = style;
-
-      this.ctx.fillRect(horzStep, y, dim, dim);
-
-      this.ctx.fillStyle = "black";
-      this.ctx.textBaseline = "top";
-      this.ctx.textAlign = "left";
-      this.ctx.font = `${dim}px Courier`;
-      this.ctx.fillText(label, horzStep + dim + gap, y);
-    });
   }
 
   renderSpectrum(analyser) {
