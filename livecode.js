@@ -73,7 +73,9 @@ function loop(numFrames, outL, outR, sampleRate) {
       }
 
       outL[i] = lastSampleValueL;
-      outR[i] = isMono ? lastSampleValueL : lastSampleValueR;
+      if (!isMono) {
+        outR[i] = lastSampleValueR;
+      }
     }
   }
   `
@@ -392,22 +394,31 @@ function createPlayer() {
   fileInput.addEventListener("change", () => {
     if (fileInput.files.length === 0 ) { return; }
 
-    const playerId = "player";
-    if (audioEl === undefined) {
-      audioEl = document.createElement("audio");
-      audioEl.id = playerId;
-      audioEl.controls = true;
-      audioEl.loop = true;
-      audioEl.crossOrigin = "anonymous";
-      document.getElementById("audio-file").appendChild(audioEl);
-    }
+    audioEl = document.getElementById("player");
+    audioEl.controls = true;
+    audioEl.loop = true;
+    audioEl.crossOrigin = "anonymous";
 
-    const reader = new FileReader();
-    reader.addEventListener("load", event => {
+    const urlReader = new FileReader();
+    urlReader.addEventListener("load", event => {
       audioEl.src = event.target.result;
     }, false);
 
-    reader.readAsDataURL(fileInput.files[0]);
+    urlReader.readAsDataURL(fileInput.files[0]);
+
+    const blobReader = new FileReader();
+    blobReader.addEventListener("load", event => {
+      audio.decodeAudioData(event.target.result).then(buffer => {
+        const channelsEl = document.getElementById("numChannels");
+        const isMono = buffer.numberOfChannels === 1;
+        channelsEl.innerHTML = isMono
+          ? "Mono audio file, <code>outR</code> will be undefined"
+          : "";
+      });
+    }, false);
+
+    blobReader.readAsArrayBuffer(fileInput.files[0]);
+
 
     if (mediaSourceNode === undefined) {
       mediaSourceNode = audio.createMediaElementSource(audioEl);
