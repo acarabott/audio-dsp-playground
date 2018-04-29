@@ -414,13 +414,13 @@ function createPlayer() {
         const channelsEl = document.getElementById("numChannels");
         const isMono = buffer.numberOfChannels === 1;
         channelsEl.innerHTML = isMono
-          ? "Mono audio file, <code>outR</code> will be undefined"
+          ? "Mono audio file, <code>outR</code> will be <code>undefined</code>"
           : "";
+        channelsEl.style.display = isMono ? "inline-block" : "none";
       });
     }, false);
 
     blobReader.readAsArrayBuffer(fileInput.files[0]);
-
 
     if (mediaSourceNode === undefined) {
       mediaSourceNode = audio.createMediaElementSource(audioEl);

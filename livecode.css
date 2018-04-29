@@ -101,6 +101,7 @@ button.stop.down {
 
 #presets, #audio-file {
   display: inline-block;
+  height: 50px;
 }
 
 #player {
@@ -117,6 +118,17 @@ button.stop.down {
 #remove {
   background: rgb(212, 100, 100);
   color: white;
+}
+
+#audio-file {
+  position: relative;
+}
+
+#numChannels {
+  display: none;
+  margin-left: 5px;
+  background: rgb(249, 202, 158);
+  padding: 5px;
 }
 
 .key-wrap {
