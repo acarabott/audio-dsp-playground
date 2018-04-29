@@ -12,36 +12,35 @@ let analyserSum;
 const presets = [
     {
       name: "White Noise",
-      code: `dsp.loop = (numFrames, outL, outR) => {
+      code: `function loop(numFrames, outL, outR, sampleRate) {
   const amp = 0.1;
   for (let i = 0; i < numFrames; i++) {
     const noise = Math.random() * 2 - 1;
     outL[i] = noise * amp;
     outR[i] = noise * amp;
   }
-};
+}
 `
     },
   {
     name: "Sine Wave",
-    code: `dsp.setup = (state, sampleRate) => {
-  state.time = 0;
-};
+    code: `let time = 0;
 
-dsp.loop = (numFrames, outL, outR, sampleRate, state) => {
+function getSine(freq, time) {
+  return Math.sin(2 * Math.PI * freq * time);
+}
+
+function loop(numFrames, outL, outR, sampleRate) {
   const freq = 666;
   const amp = 0.1;
 
   for (let i = 0; i < numFrames; i++) {
-    const sineL = Math.sin(2 * Math.PI * freq * state.time);
-    outL[i] = sineL * amp;
+    outL[i] = getSine(freq      , time) * amp;
+    outR[i] = getSine(freq * 1.5, time) * amp;
 
-    const sineR = Math.sin(2 * Math.PI * freq * 1.5 * state.time);
-    outR[i] = sineR * amp;
-
-    state.time += 1 / sampleRate;
+    time += 1 / sampleRate;
   }
-};
+}
 `
   }
 ];
@@ -75,20 +74,11 @@ function stopAudio() {
 function getCode(userCode, sampleRate, processorName) {
   return `
 
-  const dsp = {
-    setup(state, sampleRate) {},
-    loop(numFrames, outL, outR, sampleRate, state) {}
-  };
-
   ${userCode}
 
   class CustomProcessor extends AudioWorkletProcessor {
     constructor() {
       super();
-
-      this.sampleRate = ${sampleRate};
-      this.state = {};
-      dsp.setup(this.state, this.sampleRate);
     }
 
     process(inputs, outputs, parameters) {
@@ -96,7 +86,7 @@ function getCode(userCode, sampleRate, processorName) {
       const outR = outputs[0][1];
       const numFrames = outL.length;
 
-      dsp.loop(numFrames, outL, outR, this.sampleRate, this.state);
+      loop(numFrames, outL, outR, sampleRate);
 
       return true;
     }
