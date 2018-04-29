@@ -12,23 +12,23 @@ let analyserSum;
 const presets = [
     {
       name: "White Noise",
-      code: `function loop(numFrames, outL, outR) {
+      code: `dsp.loop = (numFrames, outL, outR) => {
   const amp = 0.1;
   for (let i = 0; i < numFrames; i++) {
     const noise = Math.random() * 2 - 1;
     outL[i] = noise * amp;
     outR[i] = noise * amp;
   }
-}
+};
 `
     },
   {
     name: "Sine Wave",
-    code: `function setup(state, sampleRate) {
+    code: `dsp.setup = (state, sampleRate) => {
   state.time = 0;
-}
+};
 
-function loop(numFrames, outL, outR, sampleRate, state) {
+dsp.loop = (numFrames, outL, outR, sampleRate, state) => {
   const freq = 666;
   const amp = 0.1;
 
@@ -41,7 +41,7 @@ function loop(numFrames, outL, outR, sampleRate, state) {
 
     state.time += 1 / sampleRate;
   }
-}
+};
 `
   }
 ];
@@ -72,14 +72,23 @@ function stopAudio() {
   }
 }
 
-function getCode(setupCode, loopCode, sampleRate, processorName) {
-  return `class CustomProcessor extends AudioWorkletProcessor {
+function getCode(userCode, sampleRate, processorName) {
+  return `
+
+  const dsp = {
+    setup(state, sampleRate) {},
+    loop(numFrames, outL, outR, sampleRate, state) {}
+  };
+
+  ${userCode}
+
+  class CustomProcessor extends AudioWorkletProcessor {
     constructor() {
       super();
 
       this.sampleRate = ${sampleRate};
       this.state = {};
-      (${setupCode}).call(this, this.state, this.sampleRate);
+      dsp.setup(this.state, this.sampleRate);
     }
 
     process(inputs, outputs, parameters) {
@@ -87,7 +96,7 @@ function getCode(setupCode, loopCode, sampleRate, processorName) {
       const outR = outputs[0][1];
       const numFrames = outL.length;
 
-      (${loopCode}).call(this, numFrames, outL, outR, this.sampleRate, this.state);
+      dsp.loop(numFrames, outL, outR, this.sampleRate, this.state);
 
       return true;
     }
@@ -182,30 +191,10 @@ function createEditor(sampleRate) {
 
   let processorCount = 0;
 
-  function splitCode(code) {
-    function cleanFunction(functionString) {
-      let clean = functionString.trim();
-
-      if (clean.length === 0) { return "() => {}"; }
-
-      if (clean[clean.length - 1] === ";") {
-        clean = clean.slice(0, clean.length - 1);
-      }
-
-      return clean;
-    }
-
-    const split = code.search(/function\s*loop\s*\(/);
-    const setupCode = cleanFunction(code.slice(0, split));
-    const loopCode = cleanFunction(code.slice(split));
-
-    return { setupCode, loopCode };
-  }
-
   function runEditorCode(editor) {
-    const { setupCode, loopCode } = splitCode(editor.getDoc().getValue());
+    const userCode = editor.getDoc().getValue();
     const processorName = `processor-${processorCount++}`;
-    const code = getCode(setupCode, loopCode, sampleRate, processorName);
+    const code = getCode(userCode, sampleRate, processorName);
     const blob = new Blob([code], { type: "application/javascript" });
     const url = window.URL.createObjectURL(blob);
 
