@@ -99,6 +99,16 @@ button.stop.down {
   box-shadow: 2px 2px rgb(212, 100, 100);
 }
 
+#presets, #audio-file {
+  display: inline-block;
+}
+
+#player {
+  border: 1px black solid;
+  position: relative;
+  top: 12px;
+  margin-left: 5px;
+}
 
 #presets button {
   height: 30px;

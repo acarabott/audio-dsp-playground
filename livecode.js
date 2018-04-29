@@ -1,18 +1,21 @@
-/* global CodeMirror, AudioWorkletNode, Scope */
+/* global CodeMirror, AudioWorkletNode */
 
 import { Scope } from "./Scope.js";
 
 let audio;
 let customNode;
+let audioEl;
+let mediaSourceNode;
 let CustomAudioNode;
 let analyserLeft;
 let analyserRight;
 let analyserSum;
 
+
 const presets = [
-    {
-      name: "White Noise",
-      code: `function loop(numFrames, outL, outR, sampleRate) {
+  {
+    name: "White Noise",
+    code: `function loop(numFrames, outL, outR, sampleRate) {
   const amp = 0.1;
   for (let i = 0; i < numFrames; i++) {
     const noise = Math.random() * 2 - 1;
@@ -21,7 +24,7 @@ const presets = [
   }
 }
 `
-    },
+  },
   {
     name: "Sine Wave",
     code: `let time = 0;
@@ -42,7 +45,39 @@ function loop(numFrames, outL, outR, sampleRate) {
   }
 }
 `
+  },
+  {
+    name: "Bitcrusher",
+    code: `// adapted from https://googlechromelabs.github.io/web-audio-samples/audio-worklet/basic/bit-crusher.html
+  const bitDepth = 4;
+  const frequencyReduction = 0.1;
+
+  let phase = 0;
+  let lastSampleValueL = 0;
+  let lastSampleValueR = 0;
+
+  function crush(sample, step) {
+    return step * Math.floor(sample / step + 0.5);
   }
+
+  function loop(numFrames, outL, outR, sampleRate, inL, inR) {
+    const isMono = inR === undefined;
+
+    for (let i = 0; i < numFrames; ++i) {
+      const step = Math.pow(0.5, bitDepth);
+      phase += frequencyReduction;
+      if (phase >= 1.0) {
+        phase -= 1.0;
+        lastSampleValueL = crush(inL[i], step);
+        lastSampleValueR = isMono ? lastSampleValueL : crush(inR[i], step);
+      }
+
+      outL[i] = lastSampleValueL;
+      outR[i] = isMono ? lastSampleValueL : lastSampleValueR;
+    }
+  }
+  `
+    },
 ];
 
 function resumeContextOnInteraction(audioContext) {
@@ -82,11 +117,13 @@ function getCode(userCode, sampleRate, processorName) {
     }
 
     process(inputs, outputs, parameters) {
+      const inL = inputs[0][0];
+      const inR = inputs[0][1];
       const outL = outputs[0][0];
       const outR = outputs[0][1];
       const numFrames = outL.length;
 
-      loop(numFrames, outL, outR, sampleRate);
+      loop(numFrames, outL, outR, sampleRate, inL, inR);
 
       return true;
     }
@@ -98,7 +135,13 @@ function getCode(userCode, sampleRate, processorName) {
 function runAudioWorklet(workletUrl, processorName) {
   audio.audioWorklet.addModule(workletUrl).then(() => {
     stopAudio();
+
     customNode = new CustomAudioNode(audio, processorName);
+
+    if (mediaSourceNode !== undefined) {
+      mediaSourceNode.connect(customNode);
+    }
+
     customNode.connect(audio.destination);
 
     const analysisSplitter = audio.createChannelSplitter(2);
@@ -193,6 +236,7 @@ function createEditor(sampleRate) {
 
   function playAudio(editor) {
     stopAudio();
+    if (audioEl !== undefined && audioEl.paused) { audioEl.play(); }
     runEditorCode(editor);
   }
 
@@ -343,6 +387,35 @@ function createScopes() {
   loop();
 }
 
+function createPlayer() {
+  const fileInput = document.getElementById("input");
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files.length === 0 ) { return; }
+
+    const playerId = "player";
+    if (audioEl === undefined) {
+      audioEl = document.createElement("audio");
+      audioEl.id = playerId;
+      audioEl.controls = true;
+      audioEl.loop = true;
+      audioEl.crossOrigin = "anonymous";
+      document.getElementById("audio-file").appendChild(audioEl);
+    }
+
+    const reader = new FileReader();
+    reader.addEventListener("load", event => {
+      audioEl.src = event.target.result;
+    }, false);
+
+    reader.readAsDataURL(fileInput.files[0]);
+
+    if (mediaSourceNode === undefined) {
+      mediaSourceNode = audio.createMediaElementSource(audioEl);
+    }
+  }, false);
+
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   if (window.AudioContext === undefined || window.AudioWorklet === undefined) {
     document.getElementById("sampleRateMsg").remove();
@@ -354,7 +427,7 @@ document.addEventListener("DOMContentLoaded", () => {
     CustomAudioNode = class CustomAudioNode extends AudioWorkletNode {
       constructor(audioContext, processorName) {
         super(audioContext, processorName, {
-          numberOfInputs: 0,
+          numberOfInputs: 1,
           numberOfOutputs: 1,
           outputChannelCount: [2]
         });
@@ -365,6 +438,8 @@ document.addEventListener("DOMContentLoaded", () => {
     resumeContextOnInteraction(audio);
 
     createScopes();
+
+    createPlayer();
     createEditor(audio.sampleRate);
   }
 });
