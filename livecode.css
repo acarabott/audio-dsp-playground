@@ -110,8 +110,13 @@ button.stop.down {
   margin-left: 5px;
 }
 
-#presets button {
+#presets button, #remove {
   height: 30px;
+}
+
+#remove {
+  background: rgb(212, 100, 100);
+  color: white;
 }
 
 .key-wrap {

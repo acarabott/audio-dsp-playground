@@ -140,7 +140,7 @@ function runAudioWorklet(workletUrl, processorName) {
 
     customNode = new CustomAudioNode(audio, processorName);
 
-    if (mediaSourceNode !== undefined) {
+    if (mediaSourceNode !== undefined && audioEl.src !== "") {
       mediaSourceNode.connect(customNode);
     }
 
@@ -238,7 +238,9 @@ function createEditor(sampleRate) {
 
   function playAudio(editor) {
     stopAudio();
-    if (audioEl !== undefined && audioEl.paused) { audioEl.play(); }
+    if (audioEl !== undefined && audioEl.paused && audioEl.readyState > 0) {
+      audioEl.play();
+    }
     runEditorCode(editor);
   }
 
@@ -425,6 +427,15 @@ function createPlayer() {
     }
   }, false);
 
+  const removeButton = createButton("X");
+  removeButton.id = "remove";
+  removeButton.addEventListener("click", () => {
+    if (audioEl !== undefined) {
+      audioEl.src = "";
+    }
+    fileInput.value = null;
+  });
+  document.getElementById("remove-parent").appendChild(removeButton);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
