@@ -4,8 +4,10 @@ import { Scope } from "./Scope.js";
 
 let audio;
 let customNode;
-let audioEl;
-let mediaSourceNode;
+let sourceBuffer;
+let bufferSourceNode;
+let bufferSourceNodeStartTime = 0;
+let bufferSourceNodeOffset = 0;
 let CustomAudioNode;
 let analyserLeft;
 let analyserRight;
@@ -106,6 +108,12 @@ function stopAudio() {
     customNode.disconnect();
     customNode = undefined;
   }
+
+  if (bufferSourceNode !== undefined) {
+    bufferSourceNodeOffset = audio.currentTime - bufferSourceNodeStartTime;
+    bufferSourceNode.stop();
+    bufferSourceNode.disconnect();
+  }
 }
 
 function getCode(userCode, sampleRate, processorName) {
@@ -140,8 +148,13 @@ function runAudioWorklet(workletUrl, processorName) {
 
     customNode = new CustomAudioNode(audio, processorName);
 
-    if (mediaSourceNode !== undefined && audioEl.src !== "") {
-      mediaSourceNode.connect(customNode);
+    if (sourceBuffer !== undefined) {
+      bufferSourceNode = audio.createBufferSource();
+      bufferSourceNode.buffer = sourceBuffer;
+      bufferSourceNode.loop = true;
+      bufferSourceNode.connect(customNode);
+      bufferSourceNode.start(audio.currentTime, bufferSourceNodeOffset);
+      bufferSourceNodeStartTime = audio.currentTime - bufferSourceNodeOffset;
     }
 
     customNode.connect(audio.destination);
@@ -238,9 +251,6 @@ function createEditor(sampleRate) {
 
   function playAudio(editor) {
     stopAudio();
-    if (audioEl !== undefined && audioEl.paused && audioEl.readyState > 0) {
-      audioEl.play();
-    }
     runEditorCode(editor);
   }
 
@@ -396,21 +406,10 @@ function createPlayer() {
   fileInput.addEventListener("change", () => {
     if (fileInput.files.length === 0 ) { return; }
 
-    audioEl = document.getElementById("player");
-    audioEl.controls = true;
-    audioEl.loop = true;
-    audioEl.crossOrigin = "anonymous";
-
-    const urlReader = new FileReader();
-    urlReader.addEventListener("load", event => {
-      audioEl.src = event.target.result;
-    }, false);
-
-    urlReader.readAsDataURL(fileInput.files[0]);
-
     const blobReader = new FileReader();
     blobReader.addEventListener("load", event => {
       audio.decodeAudioData(event.target.result).then(buffer => {
+        sourceBuffer = buffer;
         const channelsEl = document.getElementById("numChannels");
         const isMono = buffer.numberOfChannels === 1;
         channelsEl.innerHTML = isMono
@@ -422,18 +421,15 @@ function createPlayer() {
 
     blobReader.readAsArrayBuffer(fileInput.files[0]);
 
-    if (mediaSourceNode === undefined) {
-      mediaSourceNode = audio.createMediaElementSource(audioEl);
-    }
   }, false);
 
   const removeButton = createButton("X");
   removeButton.id = "remove";
   removeButton.addEventListener("click", () => {
-    if (audioEl !== undefined) {
-      audioEl.src = "";
-    }
     fileInput.value = null;
+    sourceBuffer = undefined;
+    const channelsEl = document.getElementById("numChannels");
+    channelsEl.style.display = "none";
   });
   document.getElementById("remove-parent").appendChild(removeButton);
 }
