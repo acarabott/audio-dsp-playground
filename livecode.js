@@ -49,36 +49,36 @@ function loop(numFrames, outL, outR, sampleRate) {
   {
     name: "Bitcrusher",
     code: `// adapted from https://googlechromelabs.github.io/web-audio-samples/audio-worklet/basic/bit-crusher.html
-  const bitDepth = 4;
-  const frequencyReduction = 0.1;
+const bitDepth = 4;
+const frequencyReduction = 0.1;
 
-  let phase = 0;
-  let lastSampleValueL = 0;
-  let lastSampleValueR = 0;
+let phase = 0;
+let lastSampleValueL = 0;
+let lastSampleValueR = 0;
 
-  function crush(sample, step) {
-    return step * Math.floor(sample / step + 0.5);
-  }
+function crush(sample, step) {
+  return step * Math.floor(sample / step + 0.5);
+}
 
-  function loop(numFrames, outL, outR, sampleRate, inL, inR) {
-    const isMono = inR === undefined;
+function loop(numFrames, outL, outR, sampleRate, inL, inR) {
+  const isMono = inR === undefined;
 
-    for (let i = 0; i < numFrames; ++i) {
-      const step = Math.pow(0.5, bitDepth);
-      phase += frequencyReduction;
-      if (phase >= 1.0) {
-        phase -= 1.0;
-        lastSampleValueL = crush(inL[i], step);
-        lastSampleValueR = isMono ? lastSampleValueL : crush(inR[i], step);
-      }
+  for (let i = 0; i < numFrames; ++i) {
+    const step = Math.pow(0.5, bitDepth);
+    phase += frequencyReduction;
+    if (phase >= 1.0) {
+      phase -= 1.0;
+      lastSampleValueL = crush(inL[i], step);
+      lastSampleValueR = isMono ? lastSampleValueL : crush(inR[i], step);
+    }
 
-      outL[i] = lastSampleValueL;
-      if (!isMono) {
-        outR[i] = lastSampleValueR;
-      }
+    outL[i] = lastSampleValueL;
+    if (!isMono) {
+      outR[i] = lastSampleValueR;
     }
   }
-  `
+}
+`
     },
 ];
 
