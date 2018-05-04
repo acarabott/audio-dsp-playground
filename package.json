@@ -1,0 +1,5 @@
+{
+	"scripts": {
+		"build": "rollup -f iife -i livecode.js -o livecode.bundle.js"
+	}
+}
