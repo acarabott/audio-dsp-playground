@@ -445,7 +445,7 @@ function createPlayer() {
   if (removeEl !== null) { removeEl.appendChild(removeButton); }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+function main() {
   if (window.AudioContext !== undefined && window.AudioWorkletNode !== undefined) {
     const unsupportedEl = document.getElementById("unsupported");
     if (unsupportedEl !== null) { unsupportedEl.remove(); }
@@ -468,4 +468,14 @@ document.addEventListener("DOMContentLoaded", () => {
     createPlayer();
     createEditor(audio.sampleRate);
   }
-});
+}
+
+function ready(fn) {
+  if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading"){
+    fn();
+  } else {
+    document.addEventListener("DOMContentLoaded", fn);
+  }
+}
+
+ready(main);
