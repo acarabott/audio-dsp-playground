@@ -446,7 +446,7 @@ function createPlayer() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  if (window.AudioContext !== undefined && window.AudioWorklet !== undefined) {
+  if (window.AudioContext !== undefined && window.AudioWorkletNode !== undefined) {
     const unsupportedEl = document.getElementById("unsupported");
     if (unsupportedEl !== null) { unsupportedEl.remove(); }
 
