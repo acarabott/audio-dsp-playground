@@ -50,7 +50,8 @@ function loop(numFrames, outL, outR, sampleRate) {
   },
   {
     name: "Bitcrusher",
-    code: `// adapted from https://googlechromelabs.github.io/web-audio-samples/audio-worklet/basic/bit-crusher.html
+    code: `// Load an audio file above
+// adapted from https://googlechromelabs.github.io/web-audio-samples/audio-worklet/basic/bit-crusher.html
 const bitDepth = 4;
 const frequencyReduction = 0.1;
 
