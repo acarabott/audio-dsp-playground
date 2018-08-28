@@ -260,7 +260,8 @@ function loop(numFrames, outL, outR, sampleRate) {
     },
     {
       name: "Bitcrusher",
-      code: `// adapted from https://googlechromelabs.github.io/web-audio-samples/audio-worklet/basic/bit-crusher.html
+      code: `// Load an audio file above
+// adapted from https://googlechromelabs.github.io/web-audio-samples/audio-worklet/basic/bit-crusher.html
 const bitDepth = 4;
 const frequencyReduction = 0.1;
 
@@ -466,6 +467,7 @@ function loop(numFrames, outL, outR, sampleRate, inL, inR) {
 
     // code mirror
     const editorWrap = document.getElementById("editor");
+    if (editorWrap === null) { return; }
     const editor = CodeMirror(editorWrap, {
       mode: "javascript",
       value: presets[0].code,
@@ -507,21 +509,25 @@ function loop(numFrames, outL, outR, sampleRate, inL, inR) {
     });
 
     const controlsEl = document.getElementById("controls");
-    controlsEl.appendChild(runButton);
-    runButton.addEventListener("click", () => playAudio(editor));
+    if (controlsEl !== null) {
+      controlsEl.appendChild(runButton);
+      runButton.addEventListener("click", () => playAudio(editor));
 
-    controlsEl.appendChild(stopButton);
-    stopButton.addEventListener("click", () => stopAudio());
+      controlsEl.appendChild(stopButton);
+      stopButton.addEventListener("click", () => stopAudio());
 
-    presets.forEach(preset => {
-      const button = createButton(preset.name);
-      button.addEventListener("click", () => editor.getDoc().setValue(preset.code));
-      document.getElementById("presets").appendChild(button);
-    });
+      presets.forEach(preset => {
+        const button = createButton(preset.name);
+        button.addEventListener("click", () => editor.getDoc().setValue(preset.code));
+        const presetsEl = document.getElementById("presets");
+        if (presetsEl !== null) { presetsEl.appendChild(button); }
+      });
+    }
   }
 
   function createScopes() {
     const scopesContainer = document.getElementById("scopes");
+    if (scopesContainer === null) { return; }
 
     analyserLeft = audio.createAnalyser();
     window.analyser = analyserLeft;
@@ -611,21 +617,34 @@ function loop(numFrames, outL, outR, sampleRate, inL, inR) {
     loop();
   }
 
+  function decodeAudioData(audio, data) {
+    if (audio.decodeAudioData.length>1) {
+      return new Promise((resolve, reject) => {
+        audio.decodeAudioData(data, resolve, reject);
+      });
+    }
+    return audio.decodeAudioData(data);
+  }
+
   function createPlayer() {
     const fileInput = document.getElementById("input");
+    if (fileInput === null) { return; }
+
     fileInput.addEventListener("change", () => {
       if (fileInput.files.length === 0 ) { return; }
 
       const blobReader = new FileReader();
       blobReader.addEventListener("load", event => {
-        audio.decodeAudioData(event.target.result).then(buffer => {
+        decodeAudioData(audio, event.target.result).then(buffer => {
           sourceBuffer = buffer;
           const channelsEl = document.getElementById("numChannels");
-          const isMono = buffer.numberOfChannels === 1;
-          channelsEl.innerHTML = isMono
-            ? "Mono audio file, <code>outR</code> will be <code>undefined</code>"
-            : "";
-          channelsEl.style.display = isMono ? "inline-block" : "none";
+          if (channelsEl !== null) {
+            const isMono = buffer.numberOfChannels === 1;
+            channelsEl.innerHTML = isMono
+              ? "Mono audio file, <code>outR</code> will be <code>undefined</code>"
+              : "";
+            channelsEl.style.display = isMono ? "inline-block" : "none";
+          }
         });
       }, false);
 
@@ -639,18 +658,16 @@ function loop(numFrames, outL, outR, sampleRate, inL, inR) {
       fileInput.value = null;
       sourceBuffer = undefined;
       const channelsEl = document.getElementById("numChannels");
-      channelsEl.style.display = "none";
+      if (channelsEl !== null) { channelsEl.style.display = "none"; }
     });
-    document.getElementById("remove-parent").appendChild(removeButton);
+    const removeEl = document.getElementById("remove-parent");
+    if (removeEl !== null) { removeEl.appendChild(removeButton); }
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
-    if (window.AudioContext === undefined || window.AudioWorklet === undefined) {
-      document.getElementById("sampleRateMsg").remove();
-      document.getElementById("crashWarning").remove();
-    }
-    else {
-      document.getElementById("unsupported").remove();
+  function main() {
+    if (window.AudioContext !== undefined && window.AudioWorkletNode !== undefined) {
+      const unsupportedEl = document.getElementById("unsupported");
+      if (unsupportedEl !== null) { unsupportedEl.remove(); }
 
       CustomAudioNode = class CustomAudioNode extends AudioWorkletNode {
         constructor(audioContext, processorName) {
@@ -670,6 +687,16 @@ function loop(numFrames, outL, outR, sampleRate, inL, inR) {
       createPlayer();
       createEditor(audio.sampleRate);
     }
-  });
+  }
+
+  function ready(fn) {
+    if (document.attachEvent ? document.readyState === "complete" : document.readyState !== "loading"){
+      fn();
+    } else {
+      document.addEventListener("DOMContentLoaded", fn);
+    }
+  }
+
+  ready(main);
 
 }());

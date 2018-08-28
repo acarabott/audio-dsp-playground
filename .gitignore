@@ -1,3 +1,7 @@
+livecode.bundle.js
+lib/audioworklet-polyfill.js
+lib/audioworklet-polyfill.js.map
+
 # General
 .DS_Store
 .AppleDouble

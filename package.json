@@ -1,5 +1,12 @@
 {
 	"scripts": {
-		"build": "rollup -f iife -i livecode.js -o livecode.bundle.js"
+		"build": "rollup -f iife -i livecode.js -o livecode.bundle.js",
+		"postbuild": "cp -r node_modules/audioworklet-polyfill/dist/* lib/"
+	},
+	"dependencies": {
+		"audioworklet-polyfill": "^1.1.0"
+	},
+	"devDependencies": {
+		"rollup": "^0.65.0"
 	}
 }
