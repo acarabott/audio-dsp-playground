@@ -2,6 +2,8 @@
 <html>
 <head>
   <title>Audio DSP Playground</title>
+  <script src="lib/audio-polyfill.js"></script>
+  <script src="lib/audioworklet-polyfill.js"></script>
   <script src="lib/codemirror/codemirror.js"></script>
   <link rel="stylesheet" href="lib/codemirror/codemirror.css">
   <script src="lib/codemirror/javascript.js"></script>
@@ -15,6 +17,7 @@
   <link rel="stylesheet" href="lib/codemirror/lint.css">
 
   <script src="livecode.js" type="module"></script>
+  <script nomodule src="livecode.bundle.js"></script>
   <link rel="stylesheet" href="livecode.css">
 
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">

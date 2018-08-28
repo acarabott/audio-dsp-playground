@@ -407,6 +407,15 @@ function createScopes() {
   loop();
 }
 
+function decodeAudioData(audio, data) {
+  if (audio.decodeAudioData.length>1) {
+    return new Promise((resolve, reject) => {
+      audio.decodeAudioData(data, resolve, reject);
+    });
+  }
+  return audio.decodeAudioData(data);
+}
+
 function createPlayer() {
   const fileInput = document.getElementById("input");
   if (fileInput === null) { return; }
@@ -416,7 +425,7 @@ function createPlayer() {
 
     const blobReader = new FileReader();
     blobReader.addEventListener("load", event => {
-      audio.decodeAudioData(event.target.result).then(buffer => {
+      decodeAudioData(audio, event.target.result).then(buffer => {
         sourceBuffer = buffer;
         const channelsEl = document.getElementById("numChannels");
         if (channelsEl !== null) {
